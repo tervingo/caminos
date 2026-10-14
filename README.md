@@ -25,3 +25,12 @@ Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resu
 - Variables: `NODE_ENV=production` y las de `apps/api/.env.example`
 
 Si el servicio de Render no se llama `caminos-api`, cambia la URL del proxy en `netlify.toml`.
+
+**Worker de fotos (Cloudflare)**: `apps/fotos` sirve el bucket R2 `caminos-fotos` en https://caminos-fotos.j4alonso.workers.dev (solo `GET`/`HEAD` de `fotos/` y `pruebas/`). No se despliega solo:
+
+```powershell
+npx -w @caminos/fotos wrangler login   # una vez
+npm run deploy -w @caminos/fotos
+```
+
+La regla CORS del bucket (Settings → CORS Policy) permite `PUT` desde `http://localhost:5173` y `https://santiagos.netlify.app`.
