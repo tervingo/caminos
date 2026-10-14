@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Propuesta D - Diario y Mapa</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}
+a:hover{text-decoration:underline}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="background:#F2F1EA;color:#14231C;font-family:'Instrument Sans',system-ui,sans-serif;font-size:16px;line-height:1.5">
+
+<header style="border-bottom:1px solid #D8D8CC">
+<div style="max-width:1200px;margin:0 auto;padding:18px 32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+<a href="#inicio" style="display:flex;align-items:center;gap:10px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 28 L4 13 C9 4 23 4 28 13 Z" fill="#E2AE2D" stroke="#14231C" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 28 L9 10 M16 28 L13 7 M16 28 L19 7 M16 28 L23 10" stroke="#14231C" stroke-width="1.2" fill="none"/></svg>
+<span style="font-family:Newsreader,serif;font-size:24px;font-weight:600">Nuestro Camino</span>
+</a>
+<nav style="display:flex;flex-wrap:wrap;gap:28px;font-size:15px;font-weight:500">
+<a href="#anos">Los años</a>
+<a href="#mapa">Mapa</a>
+<a href="#galeria">Fotos</a>
+<a href="#lugares">Lugares</a>
+<a href="#notas">Notas</a>
+</nav>
+<button onClick="{{ toggleEdit }}" aria-pressed="{{edit}}" style="min-height:44px;padding:0 20px;border:2px solid #14231C;border-radius:999px;background:{{editBg}};color:{{editFg}};font-size:15px;font-weight:600;cursor:pointer">Modo editor</button>
+</div>
+</header>
+
+<section id="inicio" style="max-width:1200px;margin:0 auto;padding:64px 32px 40px;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-end">
+<div style="flex:1.4 1 460px;min-width:0">
+<div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#1E4D3A">Diario del grupo · desde {{firstYear}}</div>
+<h1 style="margin:16px 0 20px;font-family:Newsreader,serif;font-weight:500;font-size:64px;line-height:1.03;letter-spacing:-.02em">Un tramo cada año, y cada año un camino distinto.</h1>
+<p style="margin:0;max-width:540px;font-size:18px;color:#46544C">Cada año es independiente: su recorrido sobre el mapa de la península, sus etapas, fotos, sitios y notas.</p>
+</div>
+<div style="flex:1 1 340px;min-width:0;background:#fff;border:1px solid #D8D8CC;border-radius:16px;padding:24px;display:flex;flex-wrap:wrap;gap:20px 32px">
+<div><div style="font-family:Newsreader,serif;font-size:48px;font-weight:600;line-height:1">{{totalKm}}</div><div style="font-size:14px;color:#5A665F">km caminados</div></div>
+<div><div style="font-family:Newsreader,serif;font-size:48px;font-weight:600;line-height:1">{{nYears}}</div><div style="font-size:14px;color:#5A665F">años</div></div>
+<div><div style="font-family:Newsreader,serif;font-size:48px;font-weight:600;line-height:1">{{nCaminos}}</div><div style="font-size:14px;color:#5A665F">caminos distintos</div></div>
+</div>
+</section>
+
+<section id="anos" style="max-width:1200px;margin:0 auto;padding:0 32px 48px">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;margin-bottom:20px">
+<h2 style="margin:0;font-family:Newsreader,serif;font-size:36px;font-weight:500">Los años</h2>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{caminoChips}}" as="c" hint-placeholder-count="4">
+<button onClick="{{ c.pick }}" style="min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #14231C;background:{{c.bg}};color:{{c.fg}};font-size:14px;font-weight:600;cursor:pointer">{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<sc-for list="{{yearCards}}" as="y" hint-placeholder-count="4">
+<button onClick="{{ y.pick }}" style="flex:1 1 220px;min-width:0;text-align:left;cursor:pointer;background:#fff;border:2px solid {{y.border}};border-radius:14px;padding:0;overflow:hidden;color:inherit">
+<div style="height:96px;background:{{y.bg}}"></div>
+<div style="padding:16px">
+<div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#46544C"><span style="width:10px;height:10px;border-radius:50%;background:{{y.cc}}"></span>{{y.camino}}</div>
+<div style="margin-top:6px;font-family:Newsreader,serif;font-size:36px;font-weight:600;line-height:1">{{y.y}}</div>
+<div style="margin-top:8px;font-size:15px;font-weight:600">{{y.route}}</div>
+<div style="margin-top:4px;font-size:14px;color:#5A665F">{{y.meta}}</div>
+</div>
+</button>
+</sc-for>
+<sc-if value="{{edit}}" hint-placeholder-val="{{false}}">
+<button style="flex:1 1 220px;min-width:0;min-height:220px;border:2px dashed #1E4D3A;border-radius:14px;background:transparent;color:#1E4D3A;font-size:16px;font-weight:600;cursor:pointer">+ Nuevo año / tramo</button>
+</sc-if>
+</div>
+</section>
+
+<section id="detalle" style="max-width:1200px;margin:0 auto;padding:0 32px">
+<div style="border-top:1px solid #14231C;padding-top:32px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px">
+<div style="flex:1 1 480px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:#1E4D3A">
+<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #D8D8CC;border-radius:999px;padding:2px 12px 2px 8px"><span style="width:10px;height:10px;border-radius:50%;background:{{sel.cc}}"></span>{{sel.camino}}</span>
+<span>{{sel.date}}</span>
+</div>
+<h2 style="margin:10px 0 0;font-family:Newsreader,serif;font-size:52px;font-weight:500;line-height:1.05;letter-spacing:-.01em">{{sel.y}} · {{sel.route}}</h2>
+</div>
+<div style="display:flex;gap:36px;flex-wrap:wrap">
+<div><div style="font-family:Newsreader,serif;font-size:40px;font-weight:600;line-height:1">{{sel.km}}</div><div style="font-size:14px;color:#5A665F">kilómetros</div></div>
+<div><div style="font-family:Newsreader,serif;font-size:40px;font-weight:600;line-height:1">{{sel.days}}</div><div style="font-size:14px;color:#5A665F">etapas</div></div>
+<div><div style="font-family:Newsreader,serif;font-size:40px;font-weight:600;line-height:1">{{sel.up}}</div><div style="font-size:14px;color:#5A665F">desnivel +</div></div>
+</div>
+</div>
+<p style="margin:24px 0 0;max-width:760px;font-family:Newsreader,serif;font-size:24px;line-height:1.4;color:#2B3A32">{{sel.intro}}</p>
+
+<sc-if value="{{edit}}" hint-placeholder-val="{{false}}">
+<div style="margin-top:24px;background:#14231C;color:#fff;border-radius:14px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+<div style="flex:1 1 240px;min-width:0">
+<div style="font-weight:600">Editando {{sel.y}} · {{sel.camino}}</div>
+<div style="font-size:13px;color:#BFD0C6">Cada etapa se dibuja en el mapa desde su archivo GPX.</div>
+</div>
+<button style="min-height:44px;padding:0 16px;border:0;border-radius:999px;background:#E2AE2D;color:#14231C;font-size:14px;font-weight:600;cursor:pointer">Subir GPX</button>
+<button style="min-height:44px;padding:0 16px;border:1px solid #fff;border-radius:999px;background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Nueva etapa</button>
+<button style="min-height:44px;padding:0 16px;border:1px solid #fff;border-radius:999px;background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Subir fotos</button>
+<button style="min-height:44px;padding:0 16px;border:1px solid #fff;border-radius:999px;background:transparent;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Añadir lugar</button>
+</div>
+</sc-if>
+
+<div style="margin-top:32px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+<div id="cronica" style="flex:1 1 340px;max-width:440px;min-width:0">
+<h3 style="margin:0 0 4px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#5A665F">Etapas</h3>
+<div style="margin-bottom:8px;font-size:14px;color:#5A665F">Toca una etapa para verla de cerca en el mapa.</div>
+<sc-for list="{{stages}}" as="d" hint-placeholder-count="3">
+<button onClick="{{ d.pick }}" style="display:flex;width:100%;gap:14px;text-align:left;padding:16px;margin:0 0 12px;background:#fff;border:2px solid {{d.ring}};border-radius:14px;color:inherit;cursor:pointer">
+<span style="flex:0 0 36px;height:36px;border-radius:50%;background:#1E4D3A;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600">{{d.i}}</span>
+<span style="min-width:0;flex:1">
+<span style="display:block;font-weight:600;font-size:17px">{{d.r}}</span>
+<span style="display:block;font-size:13px;font-weight:600;color:#1E4D3A">{{d.date}} · {{d.kmText}}</span>
+<span style="display:block;margin-top:6px;font-size:14px;color:#46544C">{{d.t}}</span>
+</span>
+</button>
+</sc-for>
+</div>
+
+<div id="mapa" style="flex:2 1 560px;min-width:0">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px">
+<div style="display:flex;background:#fff;border:2px solid #1E4D3A;border-radius:999px;padding:2px">
+<button onClick="{{ goPen }}" style="min-height:40px;padding:0 18px;border:0;border-radius:999px;background:{{penBg}};color:{{penFg}};font-size:14px;font-weight:600;cursor:pointer">Península</button>
+<button onClick="{{ goTramo }}" style="min-height:40px;padding:0 18px;border:0;border-radius:999px;background:{{traBg}};color:{{traFg}};font-size:14px;font-weight:600;cursor:pointer">Zona del tramo</button>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{layers}}" as="l" hint-placeholder-count="6">
+<button onClick="{{ l.toggle }}" style="min-height:44px;padding:0 14px;border-radius:999px;border:1px solid #14231C;background:{{l.bg}};color:{{l.fg}};font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:{{l.c}};border:1px solid #14231C"></span>{{l.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="position:relative;border-radius:16px;overflow:hidden;border:1px solid #8FB5C2;background:#AAD3DF">
+<svg viewBox="0 0 900 560" style="width:100%;height:auto;display:block" role="img" aria-label="Mapa de la península ibérica con el tramo del año marcado">
+<defs>
+<clipPath id="landclip"><path d="{{geo.iberia}}"></path></clipPath>
+</defs>
+<rect width="900" height="560" fill="#AAD3DF"></rect>
+<path d="{{geo.france}}" fill="#E7E3D9" stroke="#C9C3B6" stroke-width="1"></path>
+<path d="{{geo.iberia}}" fill="#F2EFE9" stroke="#A9A292" stroke-width="1.2" stroke-linejoin="round"></path>
+<g clip-path="url(#landclip)" opacity="{{texO}}">
+<g transform="{{bg}}">
+<path d="M330 -300 C380 -120 290 40 380 180 S 560 420 520 900" fill="none" stroke="#AAD3DF" stroke-width="5"></path>
+<path d="M-300 260 C0 330 300 200 600 300 S 1000 380 1300 300" fill="none" stroke="#AAD3DF" stroke-width="4"></path>
+<ellipse cx="640" cy="110" rx="150" ry="90" fill="#CDEBB0"></ellipse>
+<ellipse cx="180" cy="470" rx="170" ry="100" fill="#CDEBB0"></ellipse>
+<ellipse cx="820" cy="470" rx="120" ry="80" fill="#ADD19E"></ellipse>
+<ellipse cx="420" cy="260" rx="90" ry="60" fill="#ADD19E"></ellipse>
+<ellipse cx="-60" cy="620" rx="160" ry="90" fill="#ADD19E"></ellipse>
+<rect x="540" y="330" width="90" height="60" rx="8" fill="#E8DFD2"></rect>
+<rect x="110" y="140" width="70" height="50" rx="8" fill="#E8DFD2"></rect>
+<g fill="none" stroke-linecap="round">
+<path d="M-300 120 C0 160 300 60 600 140 S 1000 220 1300 160" stroke="#D9D5CC" stroke-width="11"></path>
+<path d="M-300 120 C0 160 300 60 600 140 S 1000 220 1300 160" stroke="#F9B29C" stroke-width="7"></path>
+<path d="M-200 520 C100 440 400 560 700 440 S 1100 400 1400 480" stroke="#D9D5CC" stroke-width="11"></path>
+<path d="M-200 520 C100 440 400 560 700 440 S 1100 400 1400 480" stroke="#F7E58A" stroke-width="7"></path>
+<path d="M250 -200 C260 100 200 300 270 500 S 300 800 280 1000" stroke="#E3DFD6" stroke-width="8"></path>
+<path d="M250 -200 C260 100 200 300 270 500 S 300 800 280 1000" stroke="#FFFFFF" stroke-width="5"></path>
+<path d="M760 -200 C720 120 800 300 740 500 S 780 800 760 1000" stroke="#E3DFD6" stroke-width="8"></path>
+<path d="M760 -200 C720 120 800 300 740 500 S 780 800 760 1000" stroke="#FFFFFF" stroke-width="5"></path>
+</g>
+</g>
+</g>
+<path d="{{geo.pt}}" fill="none" stroke="#A9A292" stroke-width="1.2" stroke-dasharray="5 4"></path>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="{{ya.l0.d}}" stroke="{{ya.l0.c}}" stroke-width="{{ya.l0.w}}" stroke-opacity="{{ya.l0.o}}"></path>
+<path d="{{ya.l1.d}}" stroke="{{ya.l1.c}}" stroke-width="{{ya.l1.w}}" stroke-opacity="{{ya.l1.o}}"></path>
+<path d="{{ya.l2.d}}" stroke="{{ya.l2.c}}" stroke-width="{{ya.l2.w}}" stroke-opacity="{{ya.l2.o}}"></path>
+<path d="{{ya.l3.d}}" stroke="{{ya.l3.c}}" stroke-width="{{ya.l3.w}}" stroke-opacity="{{ya.l3.o}}"></path>
+<path d="{{ya.l4.d}}" stroke="{{ya.l4.c}}" stroke-width="{{ya.l4.w}}" stroke-opacity="{{ya.l4.o}}"></path>
+<path d="{{ya.l5.d}}" stroke="{{ya.l5.c}}" stroke-width="{{ya.l5.w}}" stroke-opacity="{{ya.l5.o}}"></path>
+<path d="{{ln.l0.d}}" stroke="{{ln.l0.cc}}" stroke-width="{{ln.l0.cw}}" stroke-opacity="{{ln.l0.o}}"></path>
+<path d="{{ln.l1.d}}" stroke="{{ln.l1.cc}}" stroke-width="{{ln.l1.cw}}" stroke-opacity="{{ln.l1.o}}"></path>
+<path d="{{ln.l2.d}}" stroke="{{ln.l2.cc}}" stroke-width="{{ln.l2.cw}}" stroke-opacity="{{ln.l2.o}}"></path>
+<path d="{{ln.l3.d}}" stroke="{{ln.l3.cc}}" stroke-width="{{ln.l3.cw}}" stroke-opacity="{{ln.l3.o}}"></path>
+<path d="{{ln.l4.d}}" stroke="{{ln.l4.cc}}" stroke-width="{{ln.l4.cw}}" stroke-opacity="{{ln.l4.o}}"></path>
+<path d="{{ln.l5.d}}" stroke="{{ln.l5.cc}}" stroke-width="{{ln.l5.cw}}" stroke-opacity="{{ln.l5.o}}"></path>
+<path d="{{ln.l0.d}}" stroke="{{ln.l0.c}}" stroke-width="{{ln.l0.w}}" stroke-opacity="{{ln.l0.o}}"></path>
+<path d="{{ln.l1.d}}" stroke="{{ln.l1.c}}" stroke-width="{{ln.l1.w}}" stroke-opacity="{{ln.l1.o}}"></path>
+<path d="{{ln.l2.d}}" stroke="{{ln.l2.c}}" stroke-width="{{ln.l2.w}}" stroke-opacity="{{ln.l2.o}}"></path>
+<path d="{{ln.l3.d}}" stroke="{{ln.l3.c}}" stroke-width="{{ln.l3.w}}" stroke-opacity="{{ln.l3.o}}"></path>
+<path d="{{ln.l4.d}}" stroke="{{ln.l4.c}}" stroke-width="{{ln.l4.w}}" stroke-opacity="{{ln.l4.o}}"></path>
+<path d="{{ln.l5.d}}" stroke="{{ln.l5.c}}" stroke-width="{{ln.l5.w}}" stroke-opacity="{{ln.l5.o}}"></path>
+</g>
+</svg>
+
+<sc-for list="{{cities}}" as="c" hint-placeholder-count="8">
+<span style="position:absolute;left:{{c.l}};top:{{c.t}};transform:translate(-5px,-50%);display:flex;align-items:center;gap:5px;pointer-events:none;font-size:12px;font-weight:{{c.fw}};color:#3C3A33;white-space:nowrap"><span style="width:10px;height:10px;border-radius:50%;background:{{c.dot}};border:2px solid #3C3A33;box-sizing:border-box"></span>{{c.name}}</span>
+</sc-for>
+<sc-for list="{{regions}}" as="r" hint-placeholder-count="3">
+<span style="position:absolute;left:{{r.l}};top:{{r.t}};transform:translate(-50%,-50%);pointer-events:none;font-size:12px;letter-spacing:.18em;font-weight:600;color:{{r.c}};white-space:nowrap">{{r.name}}</span>
+</sc-for>
+
+<sc-if value="{{showBox}}" hint-placeholder-val="{{true}}">
+<button onClick="{{ goTramo }}" aria-label="Acercar al tramo" style="position:absolute;left:{{box.l}};top:{{box.t}};width:{{box.w}};height:{{box.h}};box-sizing:border-box;border:2px dashed #14231C;border-radius:8px;background:rgba(255,255,255,.28);box-shadow:0 0 0 2px #fff;cursor:pointer;padding:0">
+<span style="position:absolute;left:50%;top:100%;margin-top:8px;transform:translateX(-50%);white-space:nowrap;background:#14231C;color:#fff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px">Zoom al tramo</span>
+</button>
+</sc-if>
+
+<sc-for list="{{markers}}" as="k" hint-placeholder-count="6">
+<button onClick="{{ k.pick }}" aria-label="{{k.n}}" style="position:absolute;left:{{k.l}};top:{{k.t}};transform:translate(-50%,-50%);min-width:{{k.size}}px;height:{{k.size}}px;padding:0 {{k.padx}}px;box-sizing:border-box;border-radius:999px;border:3px solid {{k.ring}};background:{{k.c}};color:{{k.fg}};font-weight:700;font-size:13px;cursor:pointer">{{k.g}}</button>
+</sc-for>
+
+<div style="position:absolute;left:12px;top:12px;display:flex;flex-direction:column;gap:6px">
+<button onClick="{{ zoomIn }}" aria-label="Acercar" style="width:44px;height:44px;border:1px solid #CFCBBF;border-radius:10px;background:#fff;font-size:22px;cursor:pointer">+</button>
+<button onClick="{{ zoomOut }}" aria-label="Alejar" style="width:44px;height:44px;border:1px solid #CFCBBF;border-radius:10px;background:#fff;font-size:22px;cursor:pointer">−</button>
+</div>
+<div style="position:absolute;right:12px;top:12px;background:rgba(255,255,255,.92);border:1px solid #CFCBBF;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600">Vista: {{levelLabel}}</div>
+<div style="position:absolute;right:8px;bottom:8px;background:rgba(255,255,255,.88);font-size:11px;color:#46544C;padding:2px 8px;border-radius:6px">Base simulada · en la web real: © colaboradores de OpenStreetMap</div>
+
+<sc-if value="{{hasPin}}" hint-placeholder-val="{{false}}">
+<div style="position:absolute;left:68px;bottom:36px;width:300px;max-width:calc(100% - 84px);box-sizing:border-box;background:#fff;color:#14231C;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.28)">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#1E4D3A">{{pin.label}}</div>
+<button onClick="{{ closePin }}" aria-label="Cerrar" style="width:44px;height:44px;margin:-12px -12px 0 0;border:0;background:transparent;font-size:20px;cursor:pointer;color:#14231C">×</button>
+</div>
+<div style="margin-top:2px;font-family:Newsreader,serif;font-size:22px;font-weight:600;line-height:1.2">{{pin.n}}</div>
+<div style="font-size:14px;color:#5A665F">{{pin.town}}</div>
+<p style="margin:8px 0 0;font-size:14px">{{pin.note}}</p>
+</div>
+</sc-if>
+</div>
+<div style="margin-top:10px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;font-size:13px;color:#5A665F">
+<div>{{mapHint}}</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 16px">
+<sc-for list="{{legend}}" as="g" hint-placeholder-count="3">
+<span style="display:flex;align-items:center;gap:6px"><span style="width:16px;height:5px;border-radius:3px;background:{{g.c}}"></span>{{g.label}}</span>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="galeria" style="max-width:1200px;margin:0 auto;padding:56px 32px 0">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:20px">
+<h2 style="margin:0;font-family:Newsreader,serif;font-size:36px;font-weight:500">Fotos de {{sel.y}}</h2>
+<span style="font-size:15px;color:#5A665F">Cada foto se coloca en el mapa por su lugar</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+<sc-for list="{{photos}}" as="p" hint-placeholder-count="4">
+<button onClick="{{ p.pick }}" style="grid-column:{{p.span}};height:220px;border:0;padding:0;border-radius:12px;background:{{p.bg}};position:relative;overflow:hidden;cursor:pointer;text-align:left">
+<span style="position:absolute;left:12px;bottom:12px;background:rgba(20,35,28,.72);color:#fff;font-size:12px;padding:4px 10px;border-radius:999px">{{p.cap}}</span>
+</button>
+</sc-for>
+<sc-if value="{{edit}}" hint-placeholder-val="{{false}}">
+<button style="height:220px;border:2px dashed #B9BDAF;border-radius:12px;background:transparent;color:#46544C;font-size:15px;font-weight:600;cursor:pointer">+ Subir fotos</button>
+</sc-if>
+</div>
+</section>
+
+<section id="lugares" style="max-width:1200px;margin:0 auto;padding:64px 32px 0">
+<h2 style="margin:0 0 20px;font-family:Newsreader,serif;font-size:36px;font-weight:500">Dónde dormir, comer y qué ver</h2>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<div style="flex:1 1 280px;min-width:0;background:#fff;border:1px solid #D8D8CC;border-top:4px solid #234E8F;border-radius:14px;padding:20px">
+<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#234E8F">Dormir</h3>
+<sc-for list="{{dormir}}" as="p" hint-placeholder-count="2">
+<div style="padding:12px 0;border-top:1px solid #ECECE3">
+<div style="font-weight:600">{{p.n}}</div>
+<div style="font-size:14px;color:#5A665F">{{p.town}}{{p.price}}</div>
+<div style="margin-top:4px;font-size:14px;color:#46544C">{{p.note}}</div>
+<a href="#mapa" onClick="{{ p.pick }}" style="display:inline-block;margin-top:6px;font-size:14px;font-weight:600;color:#1E4D3A">Ver en el mapa →</a>
+</div>
+</sc-for>
+</div>
+<div style="flex:1 1 280px;min-width:0;background:#fff;border:1px solid #D8D8CC;border-top:4px solid #1E4D3A;border-radius:14px;padding:20px">
+<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#1E4D3A">Comer</h3>
+<sc-for list="{{comer}}" as="p" hint-placeholder-count="2">
+<div style="padding:12px 0;border-top:1px solid #ECECE3">
+<div style="font-weight:600">{{p.n}}</div>
+<div style="font-size:14px;color:#5A665F">{{p.town}}{{p.price}}</div>
+<div style="margin-top:4px;font-size:14px;color:#46544C">{{p.note}}</div>
+<a href="#mapa" onClick="{{ p.pick }}" style="display:inline-block;margin-top:6px;font-size:14px;font-weight:600;color:#1E4D3A">Ver en el mapa →</a>
+</div>
+</sc-for>
+</div>
+<div style="flex:1 1 280px;min-width:0;background:#fff;border:1px solid #D8D8CC;border-top:4px solid #B07A0F;border-radius:14px;padding:20px">
+<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#8A5F08">Qué ver</h3>
+<sc-for list="{{ver}}" as="p" hint-placeholder-count="1">
+<div style="padding:12px 0;border-top:1px solid #ECECE3">
+<div style="font-weight:600">{{p.n}}</div>
+<div style="font-size:14px;color:#5A665F">{{p.town}}</div>
+<div style="margin-top:4px;font-size:14px;color:#46544C">{{p.note}}</div>
+<a href="#mapa" onClick="{{ p.pick }}" style="display:inline-block;margin-top:6px;font-size:14px;font-weight:600;color:#1E4D3A">Ver en el mapa →</a>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section id="notas" style="max-width:1200px;margin:0 auto;padding:64px 32px 0">
+<h2 style="margin:0 0 20px;font-family:Newsreader,serif;font-size:36px;font-weight:500">Notas del año</h2>
+<div style="max-width:760px">
+<sc-for list="{{notes}}" as="c" hint-placeholder-count="2">
+<div style="display:flex;flex-wrap:wrap;gap:6px 20px;padding:18px 0;border-top:1px solid #D8D8CC">
+<div style="flex:0 0 120px;font-size:14px;color:#5A665F">{{c.d}}</div>
+<p style="flex:1 1 320px;margin:0;font-family:Newsreader,serif;font-size:20px;line-height:1.4;color:#2B3A32">{{c.t}}</p>
+</div>
+</sc-for>
+<sc-if value="{{edit}}" hint-placeholder-val="{{false}}">
+<div style="display:flex;flex-wrap:wrap;gap:10px;padding-top:18px;border-top:1px solid #D8D8CC">
+<label for="nuevo" style="flex:1 1 100%;font-size:14px;font-weight:600">Añadir nota a {{sel.y}}</label>
+<input id="nuevo" type="text" value="{{draft}}" onInput="{{ onType }}" placeholder="Qué quieres recordar de este tramo" style="flex:1 1 320px;min-height:44px;padding:0 16px;border:1px solid #B9BDAF;border-radius:999px;background:#fff;font-size:15px">
+<button onClick="{{ onPost }}" style="min-height:44px;padding:0 24px;border:0;border-radius:999px;background:#14231C;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Guardar nota</button>
+</div>
+</sc-if>
+</div>
+</section>
+
+<footer style="margin-top:80px;border-top:1px solid #D8D8CC">
+<div style="max-width:1200px;margin:0 auto;padding:24px 32px;font-size:13px;color:#5A665F">Mock-up de la propuesta D · datos, fechas, coordenadas y nombres de ejemplo. El visitante solo lee; el modo editor es solo para el autor.</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#E2AE2D","options":["#E2AE2D","#D9822B","#2F7D6B","#234E8F"]},"$preview":{"width":1280,"height":3500}}'>
+class Component extends DCLogic {
+  gradients() {
+    return [
+      "linear-gradient(180deg,#a9cde0 0%,#e8dcc0 52%,#7d9a58 53%,#4f6c3c 100%)",
+      "linear-gradient(180deg,#f2c98a 0%,#e9a36b 40%,#6d5a7a 41%,#3d3550 100%)",
+      "linear-gradient(180deg,#b9d3e6 0%,#dfe8ee 45%,#a79b86 46%,#6a5f50 100%)",
+      "linear-gradient(180deg,#8fb4c9 0%,#c9d9c0 50%,#5f8a5a 51%,#2f5238 100%)",
+      "linear-gradient(180deg,#e6c3a1 0%,#f3e3c9 48%,#b98a56 49%,#7a5a36 100%)",
+      "linear-gradient(180deg,#a5c0d8 0%,#d8e2ea 55%,#8aa07a 56%,#566f4a 100%)"
+    ];
+  }
+  towns() {
+    return {
+      "Saint-Jean": [43.163, -1.238], "Roncesvalles": [43.009, -1.319], "Zubiri": [42.931, -1.505], "Pamplona": [42.812, -1.645],
+      "Sarria": [42.781, -7.414], "Portomarín": [42.807, -7.616], "Palas de Rei": [42.873, -7.868], "Melide": [42.914, -8.015],
+      "Tui": [42.046, -8.644], "O Porriño": [42.161, -8.619], "Redondela": [42.282, -8.61], "Pontevedra": [42.431, -8.644],
+      "San Vicente de la Barquera": [43.384, -4.395], "Cades": [43.335, -4.445], "Puentenansa": [43.288, -4.48], "Cicera": [43.25, -4.53]
+    };
+  }
+  geo() {
+    // contornos muy simplificados de la península, en [lat, lon]
+    const coast = [
+      [42.32, 3.32], [42.1, 3.2], [41.85, 3.15], [41.65, 2.75], [41.4, 2.2], [41.2, 1.5], [41.05, 1.1], [40.7, 0.85], [40.5, 0.5], [40.0, 0.05],
+      [39.47, -0.32], [39.17, -0.24], [38.84, 0.1], [38.73, 0.23], [38.34, -0.48], [37.97, -0.68], [37.63, -0.69], [37.57, -0.98], [37.4, -1.58],
+      [36.72, -2.19], [36.83, -2.46], [36.72, -3.52], [36.72, -4.42], [36.5, -4.88], [36.13, -5.35], [36.0, -5.6], [36.18, -6.04], [36.53, -6.29],
+      [36.78, -6.35], [37.15, -6.9], [37.2, -7.4], [37.0, -7.93], [37.02, -8.99], [37.95, -8.87], [38.5, -8.9], [38.42, -9.22], [38.78, -9.5],
+      [39.36, -9.38], [39.6, -9.08], [40.15, -8.87], [40.64, -8.75], [41.15, -8.7], [41.7, -8.85], [41.9, -8.88], [42.24, -8.8], [42.88, -9.27],
+      [43.16, -9.21], [43.37, -8.4], [43.5, -8.3], [43.79, -7.68], [43.57, -7.25], [43.54, -7.04], [43.55, -6.53], [43.66, -5.85], [43.55, -5.66],
+      [43.46, -5.06], [43.42, -4.75], [43.38, -4.4], [43.47, -3.8], [43.45, -3.45], [43.38, -3.22], [43.4, -3.0], [43.42, -2.72], [43.37, -2.5],
+      [43.33, -1.98], [43.37, -1.78]
+    ];
+    const border = [
+      [43.37, -1.78], [43.28, -1.5], [43.04, -1.32], [43.0, -1.05], [42.85, -0.7], [42.8, -0.52], [42.78, -0.25], [42.73, 0.15], [42.85, 0.7],
+      [42.7, 1.0], [42.63, 1.45], [42.45, 1.7], [42.43, 2.1], [42.48, 2.5], [42.32, 3.32]
+    ];
+    const frCoast = [
+      [42.7, 3.03], [43.3, 3.3], [43.55, 3.95], [43.4, 4.8], [43.3, 5.4], [43.1, 6.0], [47.5, 6.0], [47.5, -2.2], [47.0, -2.2], [46.2, -1.2],
+      [45.5, -1.1], [44.7, -1.2], [44.0, -1.35], [43.5, -1.55]
+    ];
+    const pt = [
+      [41.87, -8.87], [42.1, -8.15], [41.95, -7.2], [41.95, -6.55], [41.5, -6.2], [40.95, -6.85], [40.4, -7.0], [39.65, -7.0], [38.9, -7.2],
+      [38.2, -7.4], [37.17, -7.4]
+    ];
+    const cities = [
+      { name: "Madrid", at: [40.42, -3.7], hl: false }, { name: "Barcelona", at: [41.39, 2.17], hl: false },
+      { name: "Lisboa", at: [38.72, -9.14], hl: false }, { name: "Sevilla", at: [37.39, -5.99], hl: false },
+      { name: "Valencia", at: [39.47, -0.38], hl: false }, { name: "Bilbao", at: [43.26, -2.93], hl: false },
+      { name: "Zaragoza", at: [41.65, -0.89], hl: false }, { name: "Santiago", at: [42.88, -8.54], hl: true }
+    ];
+    return { coast, border, frCoast, pt, cities };
+  }
+  data() {
+    return [
+      { y: "2023", camino: "Camino Francés", cc: "#234E8F", g: 0, route: "Saint-Jean → Pamplona", km: 68, days: 3, date: "8–10 sep 2023", up: "+1.700 m",
+        intro: "El primer tramo: cruzamos los Pirineos con niebla y llegamos a Pamplona con las piernas hechas polvo.",
+        stages: [
+          { r: "Saint-Jean → Roncesvalles", date: "8 sep", km: 25, t: "Subida larga entre ovejas y niebla; cena colectiva en el albergue.", pts: [[43.163, -1.238], [43.095, -1.275], [43.04, -1.325], [43.009, -1.319]] },
+          { r: "Roncesvalles → Zubiri", date: "9 sep", km: 22, t: "Bosque de hayas y la primera ampolla del viaje.", pts: [[43.009, -1.319], [42.99, -1.37], [42.96, -1.43], [42.931, -1.505]] },
+          { r: "Zubiri → Pamplona", date: "10 sep", km: 21, t: "Entrada por la muralla y pintxos en el casco viejo.", pts: [[42.931, -1.505], [42.9, -1.55], [42.86, -1.6], [42.812, -1.645]] }
+        ],
+        ph: [{ cap: "Niebla en el collado", town: "Saint-Jean" }, { cap: "Cena en Roncesvalles", town: "Roncesvalles" }, { cap: "Bosque de hayas", town: "Zubiri" }, { cap: "Muralla de Pamplona", town: "Pamplona" }],
+        places: [
+          { k: "dormir", n: "Albergue de peregrinos", town: "Roncesvalles", p: "€", note: "Literas y cena a las 19:00. Conviene reservar." },
+          { k: "dormir", n: "Albergue municipal", town: "Zubiri", p: "€", note: "Pueblo pequeño: mejor llegar pronto." },
+          { k: "comer", n: "Menú del peregrino", town: "Roncesvalles", p: "€€", note: "Plato contundente y vino incluido." },
+          { k: "comer", n: "Ronda de pintxos", town: "Pamplona", p: "€€", note: "Casco viejo, al caer la tarde." },
+          { k: "ver", n: "Colegiata y museo", town: "Roncesvalles", p: "", note: "Parada obligada antes de seguir." }
+        ],
+        notes: [{ d: "11 sep 2023", t: "Cruzar los Pirineos con niebla fue lo mejor del viaje." }, { d: "12 sep 2023", t: "Pendiente: volver a Roncesvalles con más tiempo para el museo." }] },
+      { y: "2024", camino: "Camino Francés", cc: "#234E8F", g: 1, route: "Sarria → Melide", km: 62, days: 3, date: "6–8 sep 2024", up: "+900 m",
+        intro: "Segundo año, otro punto del mismo Camino: saltamos hasta Galicia y recorrimos los bosques entre Sarria y Melide.",
+        stages: [
+          { r: "Sarria → Portomarín", date: "6 sep", km: 22, t: "Sendas entre robles y muros de piedra; bajada final hacia el embalse.", pts: [[42.781, -7.414], [42.79, -7.48], [42.8, -7.56], [42.807, -7.616]] },
+          { r: "Portomarín → Palas de Rei", date: "7 sep", km: 25, t: "Etapa larga con subidas suaves y mucha charla con otros peregrinos.", pts: [[42.807, -7.616], [42.83, -7.7], [42.85, -7.78], [42.873, -7.868]] },
+          { r: "Palas de Rei → Melide", date: "8 sep", km: 15, t: "Etapa corta que terminó, como manda la tradición, con pulpo.", pts: [[42.873, -7.868], [42.89, -7.93], [42.9, -7.98], [42.914, -8.015]] }
+        ],
+        ph: [{ cap: "Sendero entre robles", town: "Sarria" }, { cap: "Embalse desde Portomarín", town: "Portomarín" }, { cap: "Camino hacia Palas", town: "Palas de Rei" }, { cap: "Pulpo en Melide", town: "Melide" }],
+        places: [
+          { k: "dormir", n: "Albergue", town: "Portomarín", p: "€", note: "Cerca del puente, con cocina." },
+          { k: "dormir", n: "Albergue", town: "Palas de Rei", p: "€", note: "Llegar pronto en temporada alta." },
+          { k: "comer", n: "Pulpería", town: "Melide", p: "€€", note: "Pulpo a feira, mesas largas compartidas." },
+          { k: "comer", n: "Menú del día", town: "Portomarín", p: "€€", note: "Caldo gallego para empezar." },
+          { k: "ver", n: "Iglesia de San Nicolás", town: "Portomarín", p: "", note: "Reconstruida piedra a piedra al subir el embalse." }
+        ],
+        notes: [{ d: "9 sep 2024", t: "Galicia en septiembre: verde y mucha humedad." }, { d: "10 sep 2024", t: "Repetiría la pulpería de Melide." }] },
+      { y: "2025", camino: "Camino Portugués", cc: "#B4237E", g: 2, route: "Tui → Pontevedra", km: 51, days: 3, date: "5–7 sep 2025", up: "+500 m",
+        intro: "Tercer año y primer cambio de Camino: el Portugués desde Tui, con puentes, caminos de piedra y mucha tapa.",
+        stages: [
+          { r: "Tui → O Porriño", date: "5 sep", km: 17, t: "Salimos de la ciudad amurallada cruzando el Miño por la mañana.", pts: [[42.046, -8.644], [42.09, -8.63], [42.13, -8.625], [42.161, -8.619]] },
+          { r: "O Porriño → Redondela", date: "6 sep", km: 15, t: "Tramo suave entre pueblos; paramos a comer tarde en Redondela.", pts: [[42.161, -8.619], [42.2, -8.62], [42.25, -8.615], [42.282, -8.61]] },
+          { r: "Redondela → Pontevedra", date: "7 sep", km: 19, t: "Subida al alto de la Canicouva y bajada hacia el casco antiguo.", pts: [[42.282, -8.61], [42.33, -8.61], [42.38, -8.64], [42.431, -8.644]] }
+        ],
+        ph: [{ cap: "Puente sobre el Miño", town: "Tui" }, { cap: "Camino de piedra", town: "O Porriño" }, { cap: "Pueblo gallego", town: "Redondela" }, { cap: "Casco antiguo de Pontevedra", town: "Pontevedra" }],
+        places: [
+          { k: "dormir", n: "Albergue", town: "O Porriño", p: "€", note: "Sencillo y bien situado." },
+          { k: "dormir", n: "Hostal", town: "Redondela", p: "€€", note: "Habitaciones dobles, cerca de la estación." },
+          { k: "comer", n: "Menú del día", town: "O Porriño", p: "€", note: "Buena opción para el mediodía." },
+          { k: "comer", n: "Ronda de tapas", town: "Pontevedra", p: "€€", note: "Plazas del casco antiguo al atardecer." },
+          { k: "ver", n: "Catedral", town: "Tui", p: "", note: "Merece una visita antes de salir." }
+        ],
+        notes: [{ d: "8 sep 2025", t: "Cambiar de Camino nos dio un aire nuevo." }, { d: "9 sep 2025", t: "Pontevedra: ciudad para volver con calma." }] },
+      { y: "2026", camino: "Camino Lebaniego", cc: "#C2570C", g: 3, route: "San Vicente de la Barquera → Cicera", km: 44, days: 3, date: "12–14 sep 2026", up: "+1.100 m",
+        intro: "Este año nos fuimos a Cantabria: parte del Camino Lebaniego, entre el mar y las primeras montañas de Liébana.",
+        stages: [
+          { r: "San Vicente de la Barquera → Cades", date: "12 sep", km: 12, t: "Salimos del puerto con niebla baja y primeras subidas entre prados.", pts: [[43.384, -4.395], [43.365, -4.41], [43.348, -4.43], [43.335, -4.445]] },
+          { r: "Cades → Puentenansa", date: "13 sep", km: 14, t: "Valle estrecho, río a un lado y vacas en el camino.", pts: [[43.335, -4.445], [43.318, -4.462], [43.303, -4.472], [43.288, -4.48]] },
+          { r: "Puentenansa → Cicera", date: "14 sep", km: 18, t: "Subida más exigente, pero con las mejores vistas del tramo.", pts: [[43.288, -4.48], [43.275, -4.5], [43.262, -4.515], [43.25, -4.53]] }
+        ],
+        ph: [{ cap: "Puerto de San Vicente", town: "San Vicente de la Barquera" }, { cap: "Valle verde de Cades", town: "Cades" }, { cap: "Sendero junto al río", town: "Puentenansa" }, { cap: "Cicera, final del tramo", town: "Cicera" }],
+        places: [
+          { k: "dormir", n: "Albergue", town: "San Vicente de la Barquera", p: "€", note: "Cerca del puerto." },
+          { k: "dormir", n: "Casa rural", town: "Cades", p: "€€", note: "Desayuno casero." },
+          { k: "comer", n: "Pescado y marisco", town: "San Vicente de la Barquera", p: "€€€", note: "Para celebrar el primer día." },
+          { k: "comer", n: "Menú del día", town: "Puentenansa", p: "€", note: "Cocina de montaña, platos grandes." },
+          { k: "ver", n: "Castillo del Rey", town: "San Vicente de la Barquera", p: "", note: "Vistas a la ría." }
+        ],
+        notes: [{ d: "15 sep 2026", t: "El Lebaniego se queda a medias: hay que volver a terminarlo hasta Santo Toribio." }, { d: "16 sep 2026", t: "Subida a Cicera: la más dura del año." }] }
+    ];
+  }
+  renderVals() {
+    const st = this.state || {};
+    const all = this.data();
+    const T = this.towns();
+    const G = this.gradients();
+    const geo = this.geo();
+    const accent = this.props.accent ?? "#E2AE2D";
+    const year = st.year || "2026";
+    const sel0 = all.find((x) => x.y === year) || all[all.length - 1];
+    const edit = !!st.edit;
+    const L = Math.max(0, Math.min(5, typeof st.z === "number" ? st.z : 0));
+    const stageIdx = typeof st.stage === "number" ? st.stage : -1;
+    const on = { etapas: true, dormir: true, comer: true, ver: true, foto: true, otros: true, ...(st.layers || {}) };
+    const pinId = st.pin || null;
+    const cf = st.cf || "todos";
+    const W = 900, H = 560;
+    const detail = L >= 3;
+
+    // 1) vista general de la península
+    const cosL = Math.cos(41 * Math.PI / 180);
+    const latP = 40.0, lonP = -3.1;
+    const sP = Math.min(W / (13.2 * cosL * 1.02), H / (8.2 * 1.02));
+
+    // 2) vista del tramo del año elegido
+    const pts = [];
+    sel0.stages.forEach((s) => s.pts.forEach((p) => pts.push(p)));
+    sel0.places.forEach((p) => T[p.town] && pts.push(T[p.town]));
+    sel0.ph.forEach((p) => T[p.town] && pts.push(T[p.town]));
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+    pts.forEach((p) => {
+      minLat = Math.min(minLat, p[0]); maxLat = Math.max(maxLat, p[0]);
+      minLon = Math.min(minLon, p[1]); maxLon = Math.max(maxLon, p[1]);
+    });
+    const latT = (minLat + maxLat) / 2, lonT = (minLon + maxLon) / 2;
+    const dxT = Math.max((maxLon - minLon) * cosL, 0.03), dyT = Math.max(maxLat - minLat, 0.03);
+    const sT = Math.max(Math.min(W / (dxT * 1.45), H / (dyT * 1.45)), sP * 2);
+
+    // 3) interpolación del zoom (nivel 0 = península, nivel 4 = tramo, 5 = detalle)
+    const t = Math.min(L / 4, 1);
+    const sc = sP * Math.pow(sT / sP, L / 4);
+    const lat0 = latT - (1 - t) * (latT - latP) * sP / sc;
+    const lon0 = lonT - (1 - t) * (lonT - lonP) * sP / sc;
+    const P = (la, lo) => [W / 2 + (lo - lon0) * cosL * sc, H / 2 - (la - lat0) * sc];
+    const pathOf = (arr) => arr.map((p, i) => { const q = P(p[0], p[1]); return (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1); }).join(" ");
+    const polyOf = (arr) => pathOf(arr) + " Z";
+    const pct = (x, y) => [(x / W * 100).toFixed(2) + "%", (y / H * 100).toFixed(2) + "%"];
+
+    const geoPaths = {
+      iberia: polyOf(geo.coast.concat(geo.border)),
+      france: polyOf(geo.border.concat(geo.frCoast)),
+      pt: pathOf(geo.pt)
+    };
+    const texO = [0, 0, 0, 0.5, 0.85, 0.9][Math.round(L)];
+
+    // líneas: otros años (finas) y etapas del año elegido
+    const blank = { d: "M0 0", c: "#000", w: 0, cc: "#fff", cw: 0, o: 0 };
+    const yslots = all.filter((x) => x.y !== sel0.y).slice(0, 6).map((x) => {
+      const arr = [];
+      x.stages.forEach((s) => s.pts.forEach((p) => arr.push(p)));
+      return { d: pathOf(arr), c: x.cc, w: 2.5, cc: "#fff", cw: 0, o: on.otros ? 0.85 : 0 };
+    });
+    while (yslots.length < 6) yslots.push(blank);
+    const base = 3 + 0.8 * Math.min(L, 4);
+    const slots = sel0.stages.slice(0, 6).map((s, i) => {
+      const cur = i === stageIdx;
+      return {
+        d: pathOf(s.pts), c: sel0.cc, w: cur ? base + 1.5 : base,
+        cc: cur ? accent : "#FFFFFF", cw: cur ? base + 7 : base + 3.5,
+        o: stageIdx < 0 || cur ? 1 : 0.5
+      };
+    });
+    while (slots.length < 6) slots.push(blank);
+    const ya = { l0: yslots[0], l1: yslots[1], l2: yslots[2], l3: yslots[3], l4: yslots[4], l5: yslots[5] };
+    const ln = { l0: slots[0], l1: slots[1], l2: slots[2], l3: slots[3], l4: slots[4], l5: slots[5] };
+
+    // recuadro de zoom al tramo (solo en vistas lejanas)
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    pts.forEach((p) => { const q = P(p[0], p[1]); x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    let bw = Math.max(x1 - x0 + 24, 44), bh = Math.max(y1 - y0 + 24, 44);
+    const bc = [(x0 + x1) / 2, (y0 + y1) / 2];
+    const bl = pct(bc[0] - bw / 2, bc[1] - bh / 2);
+    const box = { l: bl[0], t: bl[1], w: (bw / W * 100).toFixed(2) + "%", h: (bh / H * 100).toFixed(2) + "%" };
+
+    const KIND = {
+      dormir: { g: "D", c: "#7AA7FF", label: "Dormir" },
+      comer: { g: "C", c: "#6FD08C", label: "Comer" },
+      ver: { g: "V", c: "#FFC857", label: "Qué ver" },
+      foto: { g: "F", c: "#F28DB2", label: "Foto" },
+      etapa: { g: "", c: "#1E4D3A", label: "Etapa" }
+    };
+
+    // marcadores sobre el mapa
+    const markers = [];
+    let pinItem = null;
+    if (!detail) {
+      all.forEach((x) => {
+        const cur = x.y === sel0.y;
+        if (!cur && !on.otros) return;
+        const mid = x.stages[Math.floor(x.stages.length / 2)].pts[1];
+        const q = P(mid[0], mid[1]);
+        const lp = pct(q[0], q[1] - (cur ? 34 : 18));
+        markers.push({
+          n: x.y + " · " + x.camino, g: x.y, c: x.cc, fg: "#FFFFFF", ring: cur ? accent : "#FFFFFF",
+          l: lp[0], t: lp[1], size: 28, padx: 10,
+          pick: () => this.setState({ year: x.y, stage: -1, pin: null })
+        });
+      });
+    } else {
+      const items = [];
+      if (on.etapas) {
+        items.push({ id: "s-start", kind: "etapa", glyph: "S", n: "Inicio: " + sel0.stages[0].r.split(" → ")[0], town: "", note: "Punto de salida del " + sel0.date + ".", at: sel0.stages[0].pts[0], off: [0, 0] });
+        sel0.stages.forEach((s, i) => {
+          items.push({ id: "s" + i, kind: "etapa", glyph: String(i + 1), n: "Etapa " + (i + 1) + ": " + s.r, town: s.date + " · " + s.km + " km", note: s.t, at: s.pts[s.pts.length - 1], off: [0, 0] });
+        });
+      }
+      const seen = {};
+      const offs = [[-20, -20], [20, -20], [-20, 20], [20, 20], [0, -34], [0, 34]];
+      const mk = (id, kind, n, town, note) => {
+        if (!on[kind]) return;
+        const c = T[town];
+        if (!c) return;
+        const a = seen[town] || 0; seen[town] = a + 1;
+        items.push({ id, kind, glyph: KIND[kind].g, n, town, note, at: c, off: offs[a % offs.length] });
+      };
+      sel0.places.forEach((p, i) => mk("p" + i, p.k, p.n, p.town, p.note));
+      sel0.ph.forEach((p, i) => mk("f" + i, "foto", p.cap, p.town, "Foto del grupo hecha en este punto."));
+      items.forEach((it) => {
+        const q = P(it.at[0], it.at[1]);
+        const qx = q[0] + it.off[0], qy = q[1] + it.off[1];
+        if (qx < -20 || qx > W + 20 || qy < -20 || qy > H + 20) return;
+        const lp = pct(qx, qy);
+        const isStage = it.kind === "etapa";
+        markers.push({
+          n: it.n, g: it.glyph, c: KIND[it.kind].c, fg: isStage ? "#FFFFFF" : "#14231C",
+          ring: it.id === pinId ? accent : "#FFFFFF", l: lp[0], t: lp[1],
+          size: isStage ? 30 : 32, padx: 0,
+          pick: () => this.setState({ pin: it.id })
+        });
+        if (it.id === pinId) pinItem = { n: it.n, town: it.town, note: it.note, label: KIND[it.kind].label };
+      });
+    }
+    const pin = pinItem || { n: "", town: "", note: "", label: "" };
+
+    // ciudades de referencia y nombres de región (solo en la vista general)
+    const cities = L <= 1 ? geo.cities.map((c) => {
+      const q = P(c.at[0], c.at[1]); const lp = pct(q[0], q[1]);
+      return { name: c.name, l: lp[0], t: lp[1], dot: c.hl ? "#E2AE2D" : "#FFFFFF", fw: c.hl ? 700 : 500 };
+    }) : [];
+    const regions = L <= 1 ? [
+      { name: "ESPAÑA", at: [40.0, -3.9], c: "#8A8574" }, { name: "PORTUGAL", at: [39.2, -8.1], c: "#8A8574" },
+      { name: "FRANCIA", at: [44.0, 1.0], c: "#8A8574" }, { name: "MEDITERRÁNEO", at: [39.8, 2.4], c: "#4F8EA3" }
+    ].map((r) => { const q = P(r.at[0], r.at[1]); const lp = pct(q[0], q[1]); return { name: r.name, l: lp[0], t: lp[1], c: r.c }; }) : [];
+
+    const layerDefs = [
+      { id: "etapas", label: "Etapas", c: "#1E4D3A" },
+      { id: "dormir", label: "Dormir", c: KIND.dormir.c },
+      { id: "comer", label: "Comer", c: KIND.comer.c },
+      { id: "ver", label: "Qué ver", c: KIND.ver.c },
+      { id: "foto", label: "Fotos", c: KIND.foto.c },
+      { id: "otros", label: "Otros años", c: "#B9B3A5" }
+    ];
+    const layers = layerDefs.map((l) => ({
+      label: l.label, c: l.c,
+      bg: on[l.id] ? "#14231C" : "#FFFFFF",
+      fg: on[l.id] ? "#FFFFFF" : "#14231C",
+      toggle: () => this.setState({ layers: { ...on, [l.id]: !on[l.id] } })
+    }));
+
+    const lvlNames = ["Península", "Península", "Región", "Zona", "Tramo", "Detalle"];
+    const zoomTo = (n) => this.setState({ z: n });
+
+    // cabecera, estadísticas y filtros por Camino
+    const totalKm = all.reduce((a, x) => a + x.km, 0);
+    const caminos = [];
+    all.forEach((x) => { if (caminos.indexOf(x.camino) < 0) caminos.push(x.camino); });
+    const caminoChips = [{ id: "todos", label: "Todos" }].concat(caminos.map((c) => ({ id: c, label: c.replace("Camino ", "") }))).map((c) => ({
+      label: c.label,
+      bg: cf === c.id ? "#14231C" : "transparent",
+      fg: cf === c.id ? "#FFFFFF" : "#14231C",
+      pick: () => this.setState({ cf: c.id })
+    }));
+    const yearCards = all.filter((x) => cf === "todos" || x.camino === cf).map((x) => ({
+      y: x.y, camino: x.camino, cc: x.cc, route: x.route,
+      meta: x.km + " km · " + x.days + " etapas",
+      bg: G[x.g % G.length],
+      border: x.y === sel0.y ? accent : "#D8D8CC",
+      pick: () => this.setState({ year: x.y, stage: -1, pin: null })
+    }));
+
+    const stages = sel0.stages.map((s, i) => ({
+      i: i + 1, r: s.r, date: s.date, kmText: s.km + " km", t: s.t,
+      ring: i === stageIdx ? accent : "#D8D8CC",
+      pick: () => this.setState({ stage: stageIdx === i ? -1 : i, pin: null, z: Math.max(L, 4) })
+    }));
+    const photos = sel0.ph.map((p, i) => ({
+      cap: p.cap, bg: G[(i + sel0.g + 2) % G.length], span: i === 0 ? "span 2" : "span 1",
+      pick: () => this.setState({ pin: "f" + i, layers: { ...on, foto: true }, z: Math.max(L, 4) })
+    }));
+    const placeRow = (p, i) => ({
+      n: p.n, town: p.town, note: p.note, price: p.p ? " · " + p.p : "",
+      pick: () => this.setState({ pin: "p" + i, layers: { ...on, [p.k]: true }, z: Math.max(L, 4) })
+    });
+    const indexed = sel0.places.map((p, i) => ({ p, i }));
+    const posted = (st.posted || {})[sel0.y] || [];
+    const draft = st.draft || "";
+    const penOn = L <= 1, traOn = L >= 3;
+
+    return {
+      accent, edit,
+      toggleEdit: () => this.setState({ edit: !edit }),
+      editBg: edit ? "#14231C" : "transparent",
+      editFg: edit ? "#FFFFFF" : "#14231C",
+      firstYear: all[0].y, totalKm, nYears: all.length, nCaminos: caminos.length,
+      caminoChips, yearCards,
+      sel: sel0,
+      stages, photos, ln, ya, markers, layers, pin, hasPin: !!pinItem && detail,
+      geo: geoPaths, texO,
+      bg: "translate(" + (-((lon0 * cosL * sc * 0.5) % 260)).toFixed(1) + " " + ((lat0 * sc * 0.5) % 260).toFixed(1) + ") scale(" + (1 + 0.1 * Math.max(0, L - 2)).toFixed(2) + ")",
+      cities, regions, showBox: L < 3, box,
+      closePin: () => this.setState({ pin: null }),
+      zoomIn: () => zoomTo(Math.min(5, L + 1)),
+      zoomOut: () => zoomTo(Math.max(0, L - 1)),
+      goPen: () => this.setState({ z: 0, pin: null }),
+      goTramo: () => this.setState({ z: 4 }),
+      penBg: penOn ? "#1E4D3A" : "transparent", penFg: penOn ? "#FFFFFF" : "#1E4D3A",
+      traBg: traOn ? "#1E4D3A" : "transparent", traFg: traOn ? "#FFFFFF" : "#1E4D3A",
+      levelLabel: lvlNames[Math.round(L)],
+      mapHint: L <= 1 ? "Mapa general: el recuadro marca el tramo de " + sel0.y + ". Tócalo o usa + para acercar."
+        : L === 2 ? "Acercándote a la zona del tramo de " + sel0.y + "."
+        : "Etapas de " + sel0.y + ". Los pines son lugares y fotos de ese año; − para volver a la península.",
+      legend: caminos.map((c) => ({ label: c.replace("Camino ", ""), c: all.find((x) => x.camino === c).cc })),
+      dormir: indexed.filter((x) => x.p.k === "dormir").map((x) => placeRow(x.p, x.i)),
+      comer: indexed.filter((x) => x.p.k === "comer").map((x) => placeRow(x.p, x.i)),
+      ver: indexed.filter((x) => x.p.k === "ver").map((x) => placeRow(x.p, x.i)),
+      notes: posted.concat(sel0.notes),
+      draft,
+      onType: (e) => this.setState({ draft: e.target.value }),
+      onPost: () => {
+        const tx = (this.state.draft || "").trim();
+        if (!tx) return;
+        const prev = this.state.posted || {};
+        this.setState({ draft: "", posted: { ...prev, [sel0.y]: [{ d: "Hoy", t: tx }].concat(prev[sel0.y] || []) } });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

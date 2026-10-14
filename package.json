@@ -1,0 +1,35 @@
+{
+  "name": "caminos",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dropbox:ignore": "powershell -ExecutionPolicy Bypass -File scripts/dropbox-ignore.ps1",
+    "dev": "npm run build -w packages/shared && concurrently -n api,web -c blue,green \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
+    "build:api": "npm run build -w packages/shared && npm run build -w apps/api",
+    "build:web": "npm run build -w packages/shared && npm run build -w apps/web",
+    "start:api": "npm run start -w apps/api",
+    "typecheck": "npm run build -w packages/shared && npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "npm run build -w packages/shared && vitest run",
+    "db:migrate": "echo \"Pendiente (fase 1)\"",
+    "db:seed": "echo \"Pendiente (fase 1)\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}

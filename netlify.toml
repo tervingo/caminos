@@ -1,0 +1,26 @@
+# Netlify: el sitio se construye desde la raíz del monorepo.
+[build]
+  command = "npm run build:web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Proxy al API de Render. Va antes que la regla del SPA.
+# Cambia el nombre del servicio si en Render usas otro.
+[[redirects]]
+  from = "/api/*"
+  to = "https://caminos-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
