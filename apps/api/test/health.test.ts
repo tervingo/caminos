@@ -8,7 +8,7 @@ describe('GET /api/health', () => {
     const app = buildApp(loadConfig({ NODE_ENV: 'test' }));
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(healthSchema.parse(res.json()).status).toBe('ok');
+    expect(healthSchema.parse(res.json())).toMatchObject({ status: 'ok', db: 'sin-configurar' });
     await app.close();
   });
 });

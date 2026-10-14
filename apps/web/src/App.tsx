@@ -23,7 +23,11 @@ export function App() {
         <span className="font-medium text-tinta">Estado del API: </span>
         {health.isPending && 'comprobando…'}
         {health.isError && <span className="text-red-700">sin conexión ({health.error.message})</span>}
-        {health.isSuccess && <span className="text-bosque">en marcha · {health.data.time}</span>}
+        {health.isSuccess && (
+          <span className="text-bosque">
+            en marcha · base de datos: {health.data.db} · {health.data.time}
+          </span>
+        )}
       </section>
 
       <PruebaCookie />

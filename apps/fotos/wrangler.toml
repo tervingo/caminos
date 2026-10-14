@@ -1,0 +1,9 @@
+# Worker que sirve las fotos del bucket R2 (sin dominio propio, desde workers.dev).
+name = "caminos-fotos"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "FOTOS"
+bucket_name = "caminos-fotos"

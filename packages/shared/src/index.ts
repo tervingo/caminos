@@ -4,6 +4,7 @@ export const healthSchema = z.object({
   status: z.literal('ok'),
   service: z.string(),
   time: z.string(),
+  db: z.enum(['ok', 'error', 'sin-configurar']),
 });
 
 export type Health = z.infer<typeof healthSchema>;

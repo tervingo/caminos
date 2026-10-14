@@ -7,7 +7,9 @@ $carpetas = @(
   'packages/shared/node_modules',
   'apps/web/dist',
   'apps/api/dist',
-  'packages/shared/dist'
+  'packages/shared/dist',
+  'apps/fotos/node_modules',
+  'apps/fotos/.wrangler'
 )
 foreach ($c in $carpetas) {
   New-Item -ItemType Directory -Force -Path $c | Out-Null
