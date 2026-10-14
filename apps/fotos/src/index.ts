@@ -1,10 +1,10 @@
-// Sirve en solo lectura los objetos públicos del bucket: fotos y, en la fase 0, pruebas.
+// Sirve en solo lectura las fotos del bucket.
 // gpx/ y copias/ nunca se exponen.
 interface Env {
   FOTOS: R2Bucket;
 }
 
-const PREFIJOS_PUBLICOS = ['fotos/', 'pruebas/'];
+const PREFIJOS_PUBLICOS = ['fotos/'];
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

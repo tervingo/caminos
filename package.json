@@ -19,8 +19,10 @@
     "typecheck": "npm run build -w packages/shared && npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "test": "npm run build -w packages/shared && vitest run",
-    "db:migrate": "echo \"Pendiente (fase 1)\"",
-    "db:seed": "echo \"Pendiente (fase 1)\""
+    "db:migrate": "npm run build -w packages/shared && npm run db:migrate -w @caminos/api",
+    "db:seed": "npm run build -w packages/shared && npm run db:seed -w @caminos/api",
+    "db:generate": "npm run db:generate -w @caminos/api",
+    "crear-autor": "npm run build -w packages/shared && npm run crear-autor -w @caminos/api --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -8,8 +8,35 @@ Web de un grupo de amigos: un tramo del Camino de Santiago por año. Ver `docs/p
 npm run dropbox:ignore   # siempre antes de npm install
 npm install
 copy apps\api\.env.example apps\api\.env   # y rellénalo
+npm run db:seed          # migra y carga los 4 tramos de ejemplo (repetible)
 npm run dev              # web en http://localhost:5173, API en http://localhost:3000
 ```
+
+## Base de datos
+
+- El esquema está en `apps/api/src/db/schema.ts`. Tras cambiarlo, `npm run db:generate` crea la migración SQL en `apps/api/drizzle/`, que se sube al repositorio.
+- El API aplica las migraciones al arrancar; `npm run db:migrate` lo hace a mano.
+- `npm run crear-autor -- tu@email.com` crea el autor o le cambia la contraseña (la pide sin mostrarla).
+- Para actuar sobre **producción** desde tu PC, la variable del entorno manda sobre el `.env`:
+
+  ```powershell
+  $env:DATABASE_URL = "<cadena de la rama main>"
+  npm run db:seed
+  npm run crear-autor -- tu@email.com
+  Remove-Item Env:DATABASE_URL
+  ```
+
+- Tests de integración: `TEST_DATABASE_URL` apunta a una base que se **borra entera** (en CI, un PostgreSQL de GitHub Actions). Sin ella, esos tests se saltan.
+
+## API
+
+| Endpoint | Acceso |
+| --- | --- |
+| `GET /api/health` | Público |
+| `GET /api/caminos`, `GET /api/tramos`, `GET /api/tramos/:slug` | Público (solo tramos publicados) |
+| `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` | Autor (cookie `sesion`, 7 días) |
+
+Las escrituras exigen la cabecera `Origin` de un origen permitido (`ALLOWED_ORIGIN`). Errores: `{ "error": { "code", "message", "details" } }`.
 
 ## Despliegue
 
@@ -20,13 +47,13 @@ Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resu
 **Render (Web Service, Node, plan Starter, región Frankfurt)**
 - Root directory: vacío (raíz del repositorio)
 - Build command: `npm ci --include=dev && npm run build:api` (con `NODE_ENV=production`, npm omitiría TypeScript)
-- Start command: `npm run start:api`
+- Start command: `npm run start:api` (aplica las migraciones y arranca)
 - Health check path: `/api/health`
-- Variables: `NODE_ENV=production` y las de `apps/api/.env.example`
+- Variables: `NODE_ENV=production`, `DATABASE_URL` (rama main), `JWT_SECRET` (obligatoria) y las de R2
 
 Si el servicio de Render no se llama `caminos-api`, cambia la URL del proxy en `netlify.toml`.
 
-**Worker de fotos (Cloudflare)**: `apps/fotos` sirve el bucket R2 `caminos-fotos` en https://caminos-fotos.j4alonso.workers.dev (solo `GET`/`HEAD` de `fotos/` y `pruebas/`). No se despliega solo:
+**Worker de fotos (Cloudflare)**: `apps/fotos` sirve el bucket R2 `caminos-fotos` en https://caminos-fotos.j4alonso.workers.dev (solo `GET`/`HEAD` de `fotos/`). No se despliega solo:
 
 ```powershell
 npx -w @caminos/fotos wrangler login   # una vez
