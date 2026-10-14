@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { healthSchema } from '@caminos/shared';
+import { PruebaCookie } from './PruebaCookie';
 
 async function fetchHealth() {
   const res = await fetch('/api/health');
@@ -24,6 +25,8 @@ export function App() {
         {health.isError && <span className="text-red-700">sin conexión ({health.error.message})</span>}
         {health.isSuccess && <span className="text-bosque">en marcha · {health.data.time}</span>}
       </section>
+
+      <PruebaCookie />
     </main>
   );
 }

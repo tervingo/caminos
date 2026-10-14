@@ -17,3 +17,11 @@ export const errorSchema = z.object({
 });
 
 export type ApiError = z.infer<typeof errorSchema>;
+
+// Prueba de cookie de la fase 0 (temporal)
+export const cookiePruebaSchema = z.object({
+  recibida: z.boolean(),
+  valor: z.string().nullable(),
+});
+
+export type CookiePrueba = z.infer<typeof cookiePruebaSchema>;
