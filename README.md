@@ -19,7 +19,7 @@ Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resu
 
 **Render (Web Service, Node, plan Starter, región Frankfurt)**
 - Root directory: vacío (raíz del repositorio)
-- Build command: `npm ci && npm run build:api`
+- Build command: `npm ci --include=dev && npm run build:api` (con `NODE_ENV=production`, npm omitiría TypeScript)
 - Start command: `npm run start:api`
 - Health check path: `/api/health`
 - Variables: `NODE_ENV=production` y las de `apps/api/.env.example`
