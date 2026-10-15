@@ -162,9 +162,14 @@ function FotoFicha({ tramo, foto }: { tramo: TramoEditor; foto: FotoEditor }) {
           Mostrar en el mapa público
         </label>
         <div className="flex flex-wrap gap-2">
-          <Boton variante={esPortada ? 'primario' : 'secundario'} className="min-h-9! px-3!" disabled={esPortada} ocupado={portada.isPending} onClick={() => portada.mutate(undefined)}>
-            {esPortada ? 'Portada' : 'Usar de portada'}
-          </Boton>
+          {/* La portada es la foto de la tarjeta del año; la primera que se sube lo es hasta que se elija otra */}
+          {esPortada ? (
+            <span className="inline-flex min-h-9 items-center rounded-full bg-ocre px-3 text-sm font-semibold text-tinta">★ Es la portada</span>
+          ) : (
+            <Boton className="min-h-9! px-3!" ocupado={portada.isPending} onClick={() => portada.mutate(undefined)}>
+              Usar de portada
+            </Boton>
+          )}
           <Boton
             variante="peligro"
             className="min-h-9! px-3!"

@@ -92,6 +92,20 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
             <Cifra valor={tramo.desnivelPosTotal > 0 ? desnivel(tramo.desnivelPosTotal) : '—'} etiqueta="desnivel +" />
           </div>
         </div>
+        {tramo.portada && (
+          <figure className="mt-6 mb-0">
+            <img
+              src={tramo.portada.urlGrande}
+              alt={tramo.portada.pie ?? `Portada del tramo de ${tramo.anio}`}
+              width={tramo.portada.ancho}
+              height={tramo.portada.alto}
+              // Es lo primero que se ve: se pide con prioridad
+              fetchPriority="high"
+              className="block aspect-[21/9] max-h-[460px] w-full rounded-2xl bg-linea-suave object-cover"
+            />
+            {tramo.portada.pie && <figcaption className="mt-2 text-sm text-gris">{tramo.portada.pie}</figcaption>}
+          </figure>
+        )}
         {tramo.resumen && (
           <p className="mt-6 mb-0 max-w-[760px] font-serif text-[22px] leading-[1.4] text-pizarra sm:text-2xl">
             {tramo.resumen}
