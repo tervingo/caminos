@@ -30,10 +30,10 @@ import type { Foco, TripMapProps } from './tipos';
 const TINTA = '#14231C';
 const BOSQUE = '#1E4D3A';
 
-const ROTULO_LUGAR: Record<Lugar['tipo'], string> = { dormir: 'Dormir', comer: 'Comer', ver: 'Qué ver' };
-const GLIFO_LUGAR: Record<Lugar['tipo'], string> = { dormir: 'D', comer: 'C', ver: 'V' };
+const ROTULO_LUGAR: Record<Lugar['tipo'], string> = { dormir: 'Dormir', comer: 'Comer' };
+const GLIFO_LUGAR: Record<Lugar['tipo'], string> = { dormir: 'D', comer: 'C' };
 
-const TODAS: Record<Capa, boolean> = { etapas: true, dormir: true, comer: true, ver: true, fotos: true, otros: true };
+const TODAS: Record<Capa, boolean> = { etapas: true, sitios: true, dormir: true, comer: true, fotos: true, otros: true };
 
 function volarA(mapa: L.Map, destino: Limites | null) {
   if (!destino) return;
@@ -194,6 +194,27 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
       })
     : [];
 
+  // Ida y vuelta en coche: discontinuas y solo en la vista general (no entran en el zoom del tramo)
+  const viajes =
+    capas.etapas && !detalle
+      ? [tramo.ida, tramo.vuelta].flatMap((v) => {
+          const puntos = v ? puntosEtapa(v) : [];
+          if (!v || puntos.length < 2) return [];
+          return [
+            <Polyline
+              key={v.id}
+              positions={puntos}
+              pathOptions={{ color: tramo.camino.color, weight: 3, opacity: 0.9, dashArray: '6 8', lineCap: 'butt' }}
+            >
+              <Tooltip sticky>
+                {v.tipo === 'ida' ? 'Ida' : 'Vuelta'} en coche: {v.titulo}
+                {v.km !== null && ` · ${numeroKm(v.km)} km`}
+              </Tooltip>
+            </Polyline>,
+          ];
+        })
+      : [];
+
   const lineasEtapas = capas.etapas
     ? tramo.etapas.map((e, i) => {
         const puntos = puntosEtapa(e);
@@ -282,6 +303,33 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
             ),
           ];
         })
+      : [];
+
+  // Sitios de interés de cada etapa: estrella, estén o no sobre la ruta
+  const marcadoresSitios =
+    detalle && capas.sitios
+      ? tramo.etapas.flatMap((e, i) =>
+          e.sitios.map((s, j) => (
+            <Marker
+              key={`sitio:${e.id}:${j}`}
+              position={[s.lat, s.lon]}
+              zIndexOffset={500}
+              icon={icono({
+                glifo: '★',
+                etiqueta: `Sitio de interés: ${s.nombre}`,
+                fondo: ACENTO,
+                texto: TINTA,
+                activo: i === etapa,
+                tam: 32,
+                desplazamiento: separar([s.lat, s.lon]),
+              })}
+            >
+              <Popup>
+                <Ficha rotulo={`Sitio de interés · Etapa ${i + 1}`} titulo={s.nombre} subtitulo={s.localidad ?? undefined} texto={s.nota} />
+              </Popup>
+            </Marker>
+          )),
+        )
       : [];
 
   const marcadoresLugares = detalle
@@ -398,9 +446,11 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
           <TileLayer url={TESELAS} attribution={ATRIBUCION} />
           <AttributionControl position="bottomright" prefix={false} />
           {otrosAnios}
+          {viajes}
           {lineasEtapas}
           {vistaGeneral}
           {marcadoresEtapas}
+          {marcadoresSitios}
           {marcadoresLugares}
           {marcadoresFotos}
         </MapContainer>

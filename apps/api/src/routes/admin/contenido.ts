@@ -1,4 +1,4 @@
-// Lugares y notas: cuelgan de un tramo y, opcionalmente, de una de sus etapas.
+// Lugares (dormir y comer, siempre de una etapa) y notas (del tramo o de una etapa).
 import { eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import {
@@ -34,7 +34,6 @@ export const contenidoAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { d
       precio: datos.precio ?? null,
       nota: datos.nota ?? null,
       url: datos.url ?? null,
-      etapaId: datos.etapaId ?? null,
     });
     await recalcularTramo(db, tramo.id);
     reply.code(201);

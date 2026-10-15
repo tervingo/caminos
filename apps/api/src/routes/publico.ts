@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import type { Camino, TramoDetalle, TramoResumen } from '@caminos/shared';
 import type { Db } from '../db/index.js';
@@ -27,7 +27,7 @@ export const publicoRoutes: FastifyPluginAsync<{ db: Db; assetsUrl: string }> = 
       db
         .select({ tramoId: etapas.tramoId, traza: etapas.traza })
         .from(etapas)
-        .where(inArray(etapas.tramoId, ids))
+        .where(and(inArray(etapas.tramoId, ids), eq(etapas.tipo, 'camino')))
         .orderBy(asc(etapas.tramoId), asc(etapas.posicion)),
       idsPortada.length > 0 ? db.select().from(fotos).where(inArray(fotos.id, idsPortada)) : [],
     ]);

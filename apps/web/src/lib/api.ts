@@ -25,6 +25,9 @@ interface Esquema<T> {
 
 type Metodo = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
+/** Ninguna petición puede dejar la interfaz colgada: a los 30 s se da por perdida */
+const LIMITE_MS = 30_000;
+
 async function pedir<T>(metodo: Metodo, path: string, schema: Esquema<T> | null, body?: unknown): Promise<T> {
   let res: Response;
   try {
@@ -32,9 +35,10 @@ async function pedir<T>(metodo: Metodo, path: string, schema: Esquema<T> | null,
       method: metodo,
       headers: { Accept: 'application/json', ...(body !== undefined && { 'Content-Type': 'application/json' }) },
       ...(body !== undefined && { body: JSON.stringify(body) }),
+      signal: AbortSignal.timeout(LIMITE_MS),
     });
-  } catch {
-    throw new ApiError(0, 'Sin conexión con el servidor', 'sin-conexion');
+  } catch (err) {
+    throw sinRespuesta(err);
   }
   if (!res.ok) {
     const cuerpo = errorSchema.safeParse(await res.json().catch(() => null));
@@ -44,7 +48,18 @@ async function pedir<T>(metodo: Metodo, path: string, schema: Esquema<T> | null,
     throw new ApiError(res.status, message, code, campos);
   }
   if (res.status === 204 || schema === null) return undefined as T;
-  return schema.parse(await res.json());
+  // El cuerpo también puede cortarse a medias
+  const datos = await res.json().catch((err) => {
+    throw sinRespuesta(err);
+  });
+  return schema.parse(datos);
+}
+
+function sinRespuesta(err: unknown): ApiError {
+  if (err instanceof DOMException && err.name === 'TimeoutError') {
+    return new ApiError(0, 'El servidor no ha respondido a tiempo. Recarga la página para ver si se guardó.', 'tiempo-agotado');
+  }
+  return new ApiError(0, 'Se ha perdido la conexión con el servidor. Recarga la página para ver si se guardó.', 'sin-conexion');
 }
 
 export const getJson = <T>(path: string, schema: Esquema<T>) => pedir('GET', path, schema);

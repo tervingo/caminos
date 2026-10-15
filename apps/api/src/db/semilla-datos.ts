@@ -19,7 +19,8 @@ export interface TramoSemilla {
   fechaFin: string;
   desnivelPos: number;
   etapas: { titulo: string; fecha: string; km: number; notas: string; puntos: LatLon[] }[];
-  lugares: { tipo: TipoLugar; nombre: string; localidad: string; precio: number | null; nota: string }[];
+  /** «ver» se carga como sitio de interés de la etapa de esa localidad */
+  lugares: { tipo: TipoLugar | 'ver'; nombre: string; localidad: string; precio: number | null; nota: string }[];
   notas: { fecha: string; texto: string }[];
 }
 

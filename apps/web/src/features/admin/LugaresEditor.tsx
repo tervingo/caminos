@@ -1,56 +1,59 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import type { Lugar, Punto, TipoLugar, TramoEditor } from '@caminos/shared';
+import type { Etapa, Lugar, Punto, TipoLugar, TramoEditor } from '@caminos/shared';
 import { editar, useCambio } from '../../lib/admin';
 import { precio } from '../../lib/formato';
-import { limitesTramo } from '../../lib/geo';
+import { limitesEtapa, limitesTramo } from '../../lib/geo';
 import { SelectorPunto } from './SelectorPunto';
 import { Boton, Campo, erroresDelApi, INPUT, MensajeError, TEXTAREA } from './ui';
 
 const TIPOS: { id: TipoLugar; label: string; color: string }[] = [
   { id: 'dormir', label: 'Dormir', color: '#234E8F' },
   { id: 'comer', label: 'Comer', color: '#1E4D3A' },
-  { id: 'ver', label: 'Qué ver', color: '#8A5F08' },
 ];
 
-export function LugaresEditor({ tramo }: { tramo: TramoEditor }) {
+/** Dónde dormir y comer de una etapa, dentro de la propia etapa */
+export function LugaresEtapa({ tramo, etapa }: { tramo: TramoEditor; etapa: Etapa }) {
   // null: ninguno; 'nuevo' o el id del lugar que se edita
   const [editando, setEditando] = useState<string | null>(null);
+  const lugares = tramo.lugares.filter((l) => l.etapaId === etapa.id);
 
   return (
     <div className="flex flex-col gap-3">
-      {tramo.lugares.length === 0 && editando !== 'nuevo' && <p className="m-0 text-musgo">Sin lugares todavía.</p>}
-      <ul className="m-0 flex list-none flex-col gap-2 p-0">
-        {tramo.lugares.map((l) => {
-          const tipo = TIPOS.find((t) => t.id === l.tipo)!;
-          return (
-            <li key={l.id} className="rounded-[14px] border border-linea">
-              <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <span className="text-xs font-bold uppercase tracking-[.08em]" style={{ color: tipo.color }}>
-                  {tipo.label}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="font-semibold">{l.nombre}</span>
-                  <span className="text-sm text-gris"> {[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</span>
-                </span>
-                <Boton variante="sutil" aria-expanded={editando === l.id} onClick={() => setEditando(editando === l.id ? null : l.id)}>
-                  Editar
-                </Boton>
-              </div>
-              {editando === l.id && <LugarForm tramo={tramo} lugar={l} onCerrar={() => setEditando(null)} />}
-            </li>
-          );
-        })}
-      </ul>
+      {lugares.length === 0 && editando !== 'nuevo' && (
+        <p className="m-0 text-sm text-musgo">Todavía no hay dónde dormir ni dónde comer en esta etapa.</p>
+      )}
+      {lugares.length > 0 && (
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {lugares.map((l) => {
+            const tipo = TIPOS.find((t) => t.id === l.tipo)!;
+            return (
+              <li key={l.id} className="rounded-[14px] border border-linea bg-white">
+                <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+                  <span className="text-xs font-bold uppercase tracking-[.08em]" style={{ color: tipo.color }}>
+                    {tipo.label}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-semibold">{l.nombre}</span>
+                    <span className="text-sm text-gris"> {[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</span>
+                  </span>
+                  <Boton variante="sutil" aria-expanded={editando === l.id} onClick={() => setEditando(editando === l.id ? null : l.id)}>
+                    Editar
+                  </Boton>
+                </div>
+                {editando === l.id && <LugarForm tramo={tramo} etapa={etapa} lugar={l} onCerrar={() => setEditando(null)} />}
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {editando === 'nuevo' ? (
-        <div className="rounded-[14px] border-2 border-dashed border-bosque">
-          <LugarForm tramo={tramo} onCerrar={() => setEditando(null)} />
+        <div className="rounded-[14px] border-2 border-dashed border-bosque bg-white">
+          <LugarForm tramo={tramo} etapa={etapa} onCerrar={() => setEditando(null)} />
         </div>
       ) : (
         <div>
-          <Boton variante="primario" onClick={() => setEditando('nuevo')}>
-            + Añadir lugar
-          </Boton>
+          <Boton onClick={() => setEditando('nuevo')}>+ Añadir dónde dormir o comer</Boton>
         </div>
       )}
     </div>
@@ -65,10 +68,17 @@ interface ValoresLugar {
   precio: string;
   nota: string;
   url: string;
-  etapaId: string;
 }
 
-function LugarForm({ tramo, lugar, onCerrar }: { tramo: TramoEditor; lugar?: Lugar; onCerrar: () => void }) {
+interface PropsForm {
+  tramo: TramoEditor;
+  /** Etapa a la que pertenece el lugar */
+  etapa: Etapa;
+  lugar?: Lugar;
+  onCerrar: () => void;
+}
+
+function LugarForm({ tramo, etapa, lugar, onCerrar }: PropsForm) {
   const guardar = useCambio((datos: object) =>
     lugar ? editar('PATCH', `/api/admin/lugares/${lugar.id}`, datos) : editar('POST', `/api/admin/tramos/${tramo.id}/lugares`, datos),
   );
@@ -90,14 +100,14 @@ function LugarForm({ tramo, lugar, onCerrar }: { tramo: TramoEditor; lugar?: Lug
       precio: lugar?.precio ? String(lugar.precio) : '',
       nota: lugar?.nota ?? '',
       url: lugar?.url ?? '',
-      etapaId: lugar?.etapaId ?? '',
     },
   });
+  const zona = limitesEtapa(etapa) ?? limitesTramo(tramo);
 
-  const enviar = handleSubmit(({ punto, precio: p, etapaId, ...v }) => {
+  const enviar = handleSubmit(({ punto, precio: p, ...v }) => {
     if (!punto) return setError('punto', { message: 'Busca la localidad o elige el punto en el mapa' });
     guardar.mutate(
-      { ...v, lat: punto.lat, lon: punto.lon, precio: p ? Number(p) : null, etapaId: etapaId || null },
+      { ...v, lat: punto.lat, lon: punto.lon, precio: p ? Number(p) : null, etapaId: etapa.id },
       { onSuccess: onCerrar, onError: (err) => erroresDelApi(err, setError) },
     );
   });
@@ -128,7 +138,7 @@ function LugarForm({ tramo, lugar, onCerrar }: { tramo: TramoEditor; lugar?: Lug
                 id={p.id}
                 etiqueta="Posición del lugar"
                 value={field.value}
-                zona={limitesTramo(tramo)}
+                zona={zona}
                 onChange={(punto) => {
                   field.onChange(punto);
                   if (punto?.nombre && !getValues('localidad')) setValue('localidad', punto.nombre);
@@ -150,9 +160,6 @@ function LugarForm({ tramo, lugar, onCerrar }: { tramo: TramoEditor; lugar?: Lug
             <option value="3">€€€</option>
           </select>
         )}
-      </Campo>
-      <Campo etiqueta="Etapa">
-        {(p) => <SelectorEtapa {...p} tramo={tramo} {...register('etapaId')} />}
       </Campo>
       <Campo etiqueta="Web" error={errors.url && 'Dirección no válida (empieza por https://)'}>
         {(p) => <input {...p} {...register('url')} type="url" placeholder="https://" className={INPUT} />}
@@ -185,7 +192,7 @@ function LugarForm({ tramo, lugar, onCerrar }: { tramo: TramoEditor; lugar?: Lug
   );
 }
 
-/** Desplegable con las etapas del tramo; '' es «del tramo en general» */
+/** Desplegable con las etapas del tramo para notas y fotos; '' es «del tramo en general» */
 export function SelectorEtapa({ tramo, ...props }: { tramo: TramoEditor } & React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select {...props} className={INPUT}>

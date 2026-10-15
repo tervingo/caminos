@@ -1,4 +1,4 @@
-import { inArray, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import type { LineString } from '@caminos/shared';
 import { bboxDe } from '../geo.js';
 import type { Db } from './index.js';
@@ -83,15 +83,26 @@ export async function sembrar(db: Db): Promise<void> {
         )
         .returning({ id: etapas.id, origen: etapas.origen, destino: etapas.destino });
 
-      // Cada lugar cuelga de la etapa que termina (o, si no, empieza) en su localidad
+      // Cada lugar cuelga de la etapa que termina (o, si no, empieza) en su localidad; si no, de la primera
       const etapaDe = (localidad: string) =>
-        (filasEtapas.find((e) => e.destino === localidad) ?? filasEtapas.find((e) => e.origen === localidad))?.id ??
-        null;
+        (filasEtapas.find((e) => e.destino === localidad) ?? filasEtapas.find((e) => e.origen === localidad) ?? filasEtapas[0]).id;
+
+      // Lo que hay que ver son sitios de interés de la etapa
+      for (const e of filasEtapas) {
+        const sitios = t.lugares
+          .filter((l) => l.tipo === 'ver' && etapaDe(l.localidad) === e.id)
+          .map((l) => {
+            const [lat, lon] = localidades[l.localidad];
+            return { nombre: l.nombre, localidad: l.localidad, lat, lon, nota: l.nota };
+          });
+        if (sitios.length > 0) await tx.update(etapas).set({ sitios }).where(eq(etapas.id, e.id));
+      }
 
       await tx.insert(lugares).values(
-        t.lugares.map((l) => {
+        t.lugares.flatMap(({ tipo, ...l }) => {
+          if (tipo === 'ver') return [];
           const [lat, lon] = localidades[l.localidad];
-          return { ...l, tramoId: tramo.id, etapaId: etapaDe(l.localidad), lat, lon };
+          return [{ ...l, tipo, tramoId: tramo.id, etapaId: etapaDe(l.localidad), lat, lon }];
         }),
       );
       await tx.insert(notas).values(t.notas.map((n) => ({ ...n, tramoId: tramo.id })));

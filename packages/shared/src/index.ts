@@ -47,8 +47,13 @@ export const caminoSchema = z.object({
 });
 export type Camino = z.infer<typeof caminoSchema>;
 
-export const tipoLugarSchema = z.enum(['dormir', 'comer', 'ver']);
+/** Dónde dormir y dónde comer; lo que hay que ver son los sitios de interés de cada etapa */
+export const tipoLugarSchema = z.enum(['dormir', 'comer']);
 export type TipoLugar = z.infer<typeof tipoLugarSchema>;
+
+/** Etapa del Camino o viaje en coche de ida o de vuelta (fuera de la numeración y de los totales) */
+export const tipoEtapaSchema = z.enum(['camino', 'ida', 'vuelta']);
+export type TipoEtapa = z.infer<typeof tipoEtapaSchema>;
 
 export const trazaOrigenSchema = z.enum(['carretera', 'gpx', 'manual']);
 export type TrazaOrigen = z.infer<typeof trazaOrigenSchema>;
@@ -89,8 +94,19 @@ export const tramoResumenSchema = z.object({
 });
 export type TramoResumen = z.infer<typeof tramoResumenSchema>;
 
+/** Sitio de interés de una etapa: se marca en el mapa con una estrella, aunque quede fuera de la ruta */
+export const sitioSchema = z.object({
+  nombre: z.string(),
+  localidad: z.string().nullable(),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  nota: z.string().nullable(),
+});
+export type Sitio = z.infer<typeof sitioSchema>;
+
 export const etapaSchema = z.object({
   id: z.string().uuid(),
+  tipo: tipoEtapaSchema,
   posicion: z.number().int(),
   titulo: z.string(),
   fecha: fecha.nullable(),
@@ -104,12 +120,13 @@ export const etapaSchema = z.object({
   traza: lineStringSchema.nullable(),
   trazaOrigen: trazaOrigenSchema,
   bbox: bboxSchema.nullable(),
+  sitios: z.array(sitioSchema),
 });
 export type Etapa = z.infer<typeof etapaSchema>;
 
 export const lugarSchema = z.object({
   id: z.string().uuid(),
-  etapaId: z.string().uuid().nullable(),
+  etapaId: z.string().uuid(),
   tipo: tipoLugarSchema,
   nombre: z.string(),
   localidad: z.string().nullable(),
@@ -130,7 +147,11 @@ export const notaSchema = z.object({
 export type Nota = z.infer<typeof notaSchema>;
 
 export const tramoDetalleSchema = tramoResumenSchema.omit({ ruta: true }).extend({
+  /** Solo las etapas del Camino, en orden */
   etapas: z.array(etapaSchema),
+  /** Viajes en coche de ida y vuelta, si se han anotado */
+  ida: etapaSchema.nullable(),
+  vuelta: etapaSchema.nullable(),
   lugares: z.array(lugarSchema),
   fotos: z.array(fotoSchema),
   notas: z.array(notaSchema),
@@ -208,7 +229,18 @@ export type TramoCambios = z.input<typeof tramoCambiosSchema>;
 export const perfilRutaSchema = z.enum(['driving-car', 'foot-walking', 'foot-hiking']);
 export type PerfilRuta = z.infer<typeof perfilRutaSchema>;
 
+export const sitioEntradaSchema = z.object({
+  nombre: z.string().trim().min(1).max(160),
+  localidad: textoOpcional(120).transform((v) => v ?? null),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  nota: textoOpcional(1000).transform((v) => v ?? null),
+});
+export type SitioEntrada = z.input<typeof sitioEntradaSchema>;
+
 export const etapaEntradaSchema = z.object({
+  /** Solo al crear: una etapa no cambia de tipo */
+  tipo: tipoEtapaSchema.optional(),
   titulo: z.string().trim().min(1).max(160),
   fecha: fechaOpcional,
   origen: puntoSchema.nullable().optional(),
@@ -218,10 +250,11 @@ export const etapaEntradaSchema = z.object({
   km: z.number().min(0).max(9999).nullable().optional(),
   desnivelPos: z.number().int().min(0).max(20000).nullable().optional(),
   desnivelNeg: z.number().int().min(0).max(20000).nullable().optional(),
+  sitios: z.array(sitioEntradaSchema).max(30).optional(),
 });
 export type EtapaEntrada = z.input<typeof etapaEntradaSchema>;
 
-export const etapaCambiosSchema = etapaEntradaSchema.partial();
+export const etapaCambiosSchema = etapaEntradaSchema.omit({ tipo: true }).partial().strict();
 export type EtapaCambios = z.input<typeof etapaCambiosSchema>;
 
 export const ordenEtapasSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
@@ -241,7 +274,8 @@ export const lugarEntradaSchema = z.object({
     .transform((v) => (v === '' ? null : v))
     .nullable()
     .optional(),
-  etapaId: uuidOpcional,
+  /** Etapa a la que pertenece (obligatoria) */
+  etapaId: z.string().uuid(),
 });
 export type LugarEntrada = z.input<typeof lugarEntradaSchema>;
 

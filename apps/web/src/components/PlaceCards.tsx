@@ -1,20 +1,29 @@
-import type { Lugar, TipoLugar } from '@caminos/shared';
+import type { Etapa, Lugar, TipoLugar } from '@caminos/shared';
 import { precio } from '../lib/formato';
 import { ROTULO } from './ui';
 
 const TIPOS: { tipo: TipoLugar; titulo: string; borde: string; texto: string }[] = [
   { tipo: 'dormir', titulo: 'Dormir', borde: '#234E8F', texto: '#234E8F' },
   { tipo: 'comer', titulo: 'Comer', borde: '#1E4D3A', texto: '#1E4D3A' },
-  { tipo: 'ver', titulo: 'Qué ver', borde: '#B07A0F', texto: '#8A5F08' },
 ];
 
-export function PlaceCards({ lugares, onVerEnMapa }: { lugares: Lugar[]; onVerEnMapa: (id: string) => void }) {
-  if (lugares.length === 0) return <p className="m-0 text-musgo">No hay lugares anotados en este tramo.</p>;
+interface Props {
+  lugares: Lugar[];
+  etapas: Etapa[];
+  onVerEnMapa: (id: string) => void;
+}
+
+export function PlaceCards({ lugares, etapas, onVerEnMapa }: Props) {
+  // Cada sitio indica su etapa y se listan en el orden del camino
+  const posicion = new Map(etapas.map((e, i) => [e.id, i]));
+  const ordenEtapa = (l: Lugar) => posicion.get(l.etapaId) ?? 99;
+
+  if (lugares.length === 0) return <p className="m-0 text-musgo">No hay sitios para dormir ni para comer anotados en este tramo.</p>;
 
   return (
     <div className="flex flex-wrap gap-4">
       {TIPOS.map(({ tipo, titulo, borde, texto }) => {
-        const deTipo = lugares.filter((l) => l.tipo === tipo);
+        const deTipo = lugares.filter((l) => l.tipo === tipo).sort((a, b) => ordenEtapa(a) - ordenEtapa(b));
         return (
           <div
             key={tipo}
@@ -27,6 +36,11 @@ export function PlaceCards({ lugares, onVerEnMapa }: { lugares: Lugar[]; onVerEn
             {deTipo.length === 0 && <p className="m-0 border-t border-linea-suave py-3 text-sm text-gris">Nada anotado.</p>}
             {deTipo.map((l) => (
               <div key={l.id} className="border-t border-linea-suave py-3">
+                {posicion.has(l.etapaId) && (
+                  <div className="text-xs font-semibold text-bosque">
+                    Etapa {posicion.get(l.etapaId)! + 1} · {etapas[posicion.get(l.etapaId)!].titulo}
+                  </div>
+                )}
                 <div className="font-semibold">{l.nombre}</div>
                 {(l.localidad || l.precio) && (
                   <div className="text-sm text-gris">{[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</div>

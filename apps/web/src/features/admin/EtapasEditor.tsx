@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import type { Etapa, PerfilRuta, Punto, TramoEditor } from '@caminos/shared';
 import { editar, useCambio } from '../../lib/admin';
 import { desnivel, fechaCorta, numeroKm } from '../../lib/formato';
 import { type Limites, limitesTramo } from '../../lib/geo';
+import { LugaresEtapa } from './LugaresEditor';
 import { SelectorPunto } from './SelectorPunto';
 import { Boton, Campo, erroresDelApi, INPUT, MensajeError, numeroOpcional, TEXTAREA } from './ui';
 
@@ -44,12 +45,15 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <BloqueViaje tramo={tramo} tipo="ida" abierta={abierta} onAbrir={setAbierta} />
       {tramo.etapas.length === 0 && <p className="m-0 text-musgo">Añade la primera etapa con su origen y su destino.</p>}
       <ol className="m-0 flex list-none flex-col gap-3 p-0">
         {tramo.etapas.map((e, i) => (
           <li key={e.id} className="rounded-[14px] border-2 border-linea">
             <div className="flex flex-wrap items-center gap-3 p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bosque font-semibold text-white">{i + 1}</span>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bosque font-semibold text-white">
+                {i + 1}
+              </span>
               <button
                 type="button"
                 aria-expanded={abierta === e.id}
@@ -60,7 +64,12 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
                 <ResumenRuta etapa={e} />
               </button>
               <span className="flex gap-1">
-                <Boton variante="sutil" aria-label={`Subir la etapa ${i + 1}`} disabled={i === 0 || ordenar.isPending} onClick={() => mover(i, -1)}>
+                <Boton
+                  variante="sutil"
+                  aria-label={`Subir la etapa ${i + 1}`}
+                  disabled={i === 0 || ordenar.isPending}
+                  onClick={() => mover(i, -1)}
+                >
                   ↑
                 </Boton>
                 <Boton
@@ -73,7 +82,16 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
                 </Boton>
               </span>
             </div>
-            {abierta === e.id && <EtapaForm key={e.id} etapa={e} zona={zona} onCerrar={() => setAbierta(null)} />}
+            {abierta === e.id && (
+              <>
+                <EtapaForm key={e.id} etapa={e} zona={zona} onCerrar={() => setAbierta(null)} />
+                {/* Fuera del formulario de la etapa: cada lugar se guarda por su cuenta */}
+                <div className="border-t border-linea bg-papel/60 p-4">
+                  <h3 className="mt-0 mb-3 text-sm font-semibold">Dónde dormir y comer en esta etapa</h3>
+                  <LugaresEtapa tramo={tramo} etapa={e} />
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ol>
@@ -87,6 +105,67 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
           + Nueva etapa
         </Boton>
       </div>
+      <BloqueViaje tramo={tramo} tipo="vuelta" abierta={abierta} onAbrir={setAbierta} />
+    </div>
+  );
+}
+
+/** Viaje en coche de ida o de vuelta: fuera de la numeración, de los totales y del zoom del tramo */
+function BloqueViaje({
+  tramo,
+  tipo,
+  abierta,
+  onAbrir,
+}: {
+  tramo: TramoEditor;
+  tipo: 'ida' | 'vuelta';
+  abierta: string | null;
+  onAbrir: (id: string | null) => void;
+}) {
+  const etapa = tipo === 'ida' ? tramo.ida : tramo.vuelta;
+  const nombre = tipo === 'ida' ? 'Ida' : 'Vuelta';
+  const crear = useCambio(() => {
+    // La ida suele llegar al inicio de la primera etapa y la vuelta salir del final de la última
+    const primera = tramo.etapas[0];
+    const ultima = tramo.etapas.at(-1);
+    return editar('POST', `/api/admin/tramos/${tramo.id}/etapas`, {
+      tipo,
+      titulo: `${nombre} en coche`,
+      fecha: tipo === 'ida' ? (primera?.fecha ?? tramo.fechaInicio) : (ultima?.fecha ?? tramo.fechaFin),
+      ...(tipo === 'ida' ? { destino: primera?.origen ?? null } : { origen: ultima?.destino ?? null }),
+    });
+  });
+
+  if (!etapa) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-[14px] border-2 border-dashed border-borde px-4 py-3">
+        <span className="min-w-0 flex-1 text-sm text-gris">
+          {nombre} en coche: se dibuja discontinua y solo en la vista de la península; no cuenta en los km del tramo.
+        </span>
+        <Boton
+          ocupado={crear.isPending}
+          onClick={() => crear.mutate(undefined, { onSuccess: (t) => onAbrir((tipo === 'ida' ? t.ida : t.vuelta)?.id ?? null) })}
+        >
+          + Añadir {nombre.toLowerCase()}
+        </Boton>
+        <MensajeError error={crear.error} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[14px] border-2 border-dashed border-borde">
+      <button
+        type="button"
+        aria-expanded={abierta === etapa.id}
+        onClick={() => onAbrir(abierta === etapa.id ? null : etapa.id)}
+        className="w-full cursor-pointer border-0 bg-transparent p-3 text-left text-inherit"
+      >
+        <span className="block text-xs font-semibold uppercase tracking-[.08em] text-gris">{nombre} en coche</span>
+        <span className="block font-semibold">{etapa.titulo}</span>
+        <ResumenRuta etapa={etapa} />
+      </button>
+      {abierta === etapa.id && <EtapaForm key={etapa.id} etapa={etapa} zona={null} onCerrar={() => onAbrir(null)} />}
     </div>
   );
 }
@@ -114,6 +193,7 @@ interface ValoresEtapa {
   via: { punto: Punto | null }[];
   notas: string;
   km: string;
+  sitios: { nombre: string; punto: Punto | null; nota: string }[];
 }
 
 const puntosIguales = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -126,10 +206,13 @@ const valoresDe = (etapa: Etapa): ValoresEtapa => ({
   via: etapa.via.map((punto) => ({ punto })),
   notas: etapa.notas ?? '',
   km: etapa.km === null ? '' : String(etapa.km),
+  sitios: etapa.sitios.map((s) => ({ nombre: s.nombre, punto: { nombre: s.localidad, lat: s.lat, lon: s.lon }, nota: s.nota ?? '' })),
 });
 
 function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | null; onCerrar: () => void }) {
   const [perfil, setPerfil] = useState<PerfilRuta>('driving-car');
+  // La ida y la vuelta van siempre en coche y no tienen sitios de interés
+  const esViaje = etapa.tipo !== 'camino';
   const [avisoRuta, setAvisoRuta] = useState<unknown>(null);
   const guardar = useCambio((cambios: object) => editar('PATCH', `/api/admin/etapas/${etapa.id}`, cambios));
   const calcular = useCambio((p: PerfilRuta) => editar('POST', `/api/admin/etapas/${etapa.id}/calcular-ruta`, { perfil: p }));
@@ -140,14 +223,18 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
     control,
     handleSubmit,
     setError,
+    setValue,
+    getValues,
     reset,
     formState: { errors, isDirty },
   } = useForm<ValoresEtapa>({ defaultValues: valoresDe(etapa) });
   const paradas = useFieldArray({ control, name: 'via' });
+  const sitios = useFieldArray({ control, name: 'sitios' });
 
   /** Lo guardado pasa a ser la base del formulario */
   const tomarGuardado = (tramo: TramoEditor) => {
-    const actual = tramo.etapas.find((e) => e.id === etapa.id);
+    // La ida y la vuelta no están en tramo.etapas
+    const actual = [...tramo.etapas, tramo.ida, tramo.vuelta].find((e) => e?.id === etapa.id);
     if (actual) reset(valoresDe(actual));
   };
 
@@ -156,30 +243,50 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
     calcular.mutate(perfil, { onSuccess: tomarGuardado, onError: setAvisoRuta });
   };
 
-  const enviar = handleSubmit((v) => {
-    const via = v.via.flatMap((p) => (p.punto ? [p.punto] : []));
-    const cambianPuntos = !puntosIguales(v.origen, etapa.origen) || !puntosIguales(v.destino, etapa.destino) || !puntosIguales(via, etapa.via);
-    const cambios = {
-      titulo: v.titulo,
-      fecha: v.fecha,
-      notas: v.notas,
-      km: numeroOpcional(v.km),
-      ...(cambianPuntos && { origen: v.origen, destino: v.destino, via }),
-    };
-    guardar.mutate(cambios, {
-      onError: (err) => erroresDelApi(err, setError),
-      // Con origen y destino nuevos, se recalcula el recorrido sin pedirlo
-      onSuccess: (tramo) => {
-        tomarGuardado(tramo);
-        if (cambianPuntos && v.origen && v.destino) calcularRuta();
-      },
+  /** Guarda la etapa; si cambian los puntos (o se pide), calcula después el recorrido */
+  const guardarEtapa = (calcularDespues: boolean) =>
+    handleSubmit((v) => {
+      const via = v.via.flatMap((p) => (p.punto ? [p.punto] : []));
+      // Un sitio necesita nombre y localidad; las filas vacías se descartan
+      let incompleto = false;
+      v.sitios.forEach((s, i) => {
+        if (s.nombre.trim() && !s.punto) {
+          setError(`sitios.${i}.punto`, { message: 'Busca la localidad o elígela en el mapa' });
+          incompleto = true;
+        }
+      });
+      if (incompleto) return;
+      const cambianPuntos =
+        !puntosIguales(v.origen, etapa.origen) || !puntosIguales(v.destino, etapa.destino) || !puntosIguales(via, etapa.via);
+      const cambios = {
+        titulo: v.titulo,
+        fecha: v.fecha,
+        notas: v.notas,
+        km: numeroOpcional(v.km),
+        sitios: v.sitios.flatMap((s) =>
+          s.punto && s.nombre.trim()
+            ? [{ nombre: s.nombre, localidad: s.punto.nombre, lat: s.punto.lat, lon: s.punto.lon, nota: s.nota }]
+            : [],
+        ),
+        ...(cambianPuntos && { origen: v.origen, destino: v.destino, via }),
+      };
+      guardar.mutate(cambios, {
+        onError: (err) => erroresDelApi(err, setError),
+        // Con origen y destino nuevos, se recalcula el recorrido sin pedirlo
+        onSuccess: (tramo) => {
+          tomarGuardado(tramo);
+          if ((cambianPuntos || calcularDespues) && v.origen && v.destino) calcularRuta();
+        },
+      });
     });
-  });
 
-  const puedeCalcular = !!etapa.origen && !!etapa.destino;
+  // Se puede calcular en cuanto el formulario tiene origen y destino, guardados o no
+  const [origen, destino] = useWatch({ control, name: ['origen', 'destino'] });
+  const puedeCalcular = !!origen && !!destino;
+  const calculando = calcular.isPending || (guardar.isPending && puedeCalcular);
 
   return (
-    <form noValidate onSubmit={enviar} className="grid gap-4 border-t border-linea p-4 sm:grid-cols-2">
+    <form noValidate onSubmit={guardarEtapa(false)} className="grid gap-4 border-t border-linea p-4 sm:grid-cols-2">
       <Campo etiqueta="Título" error={errors.titulo && 'Escribe un título'}>
         {(p) => <input {...p} {...register('titulo', { required: true })} className={INPUT} />}
       </Campo>
@@ -207,7 +314,9 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
 
       <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0 sm:col-span-2">
         <legend className="mb-1 p-0 text-sm font-semibold">Paradas intermedias</legend>
-        <p className="m-0 text-[13px] text-gris">Para que el recorrido pase por un sitio concreto cuando la carretera más corta no es la que hicisteis.</p>
+        <p className="m-0 text-[13px] text-gris">
+          Para que el recorrido pase por un sitio concreto cuando la carretera más corta no es la que hicisteis.
+        </p>
         {paradas.fields.map((f, i) => (
           <div key={f.id} className="flex flex-wrap items-start gap-2">
             <span className="mt-3 text-sm text-gris">{i + 1}.</span>
@@ -232,24 +341,82 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
         </div>
       </fieldset>
 
+      {!esViaje && (
+        <fieldset className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0 sm:col-span-2">
+          <legend className="mb-1 p-0 text-sm font-semibold">★ Sitios de interés</legend>
+          <p className="m-0 text-[13px] text-gris">
+            Salen en la tarjeta de la etapa y en el mapa con una estrella, aunque no estén en la ruta.
+          </p>
+          {sitios.fields.map((f, i) => (
+            <div key={f.id} className="grid gap-2 rounded-xl border border-linea p-3 sm:grid-cols-2">
+              <Campo etiqueta={`Sitio ${i + 1}`} error={errors.sitios?.[i]?.nombre && 'Escribe el nombre'}>
+                {(p) => <input {...p} {...register(`sitios.${i}.nombre`)} placeholder="Cueva del Soplao" className={INPUT} />}
+              </Campo>
+              <Campo etiqueta="Localidad" error={errors.sitios?.[i]?.punto?.message}>
+                {(p) => (
+                  <Controller
+                    control={control}
+                    name={`sitios.${i}.punto`}
+                    render={({ field }) => (
+                      <SelectorPunto
+                        id={p.id}
+                        etiqueta={`Localidad del sitio ${i + 1}`}
+                        value={field.value}
+                        zona={zona}
+                        onChange={(punto) => {
+                          field.onChange(punto);
+                          if (punto?.nombre && !getValues(`sitios.${i}.nombre`))
+                            setValue(`sitios.${i}.nombre`, punto.nombre, { shouldDirty: true });
+                        }}
+                      />
+                    )}
+                  />
+                )}
+              </Campo>
+              <Campo etiqueta="Nota" className="sm:col-span-2">
+                {(p) => <input {...p} {...register(`sitios.${i}.nota`)} placeholder="Opcional" className={INPUT} />}
+              </Campo>
+              <div>
+                <Boton variante="sutil" onClick={() => sitios.remove(i)}>
+                  Quitar sitio
+                </Boton>
+              </div>
+            </div>
+          ))}
+          <div>
+            <Boton variante="sutil" onClick={() => sitios.append({ nombre: '', punto: null, nota: '' })}>
+              + Añadir sitio de interés
+            </Boton>
+          </div>
+        </fieldset>
+      )}
+
       <Campo etiqueta="Notas de la etapa" className="sm:col-span-2" error={errors.notas?.message}>
         {(p) => <textarea {...p} {...register('notas')} rows={3} className={TEXTAREA} />}
       </Campo>
 
       <div className="flex flex-col gap-2 rounded-xl bg-papel p-3 sm:col-span-2">
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            Tipo de recorrido
-            <select value={perfil} onChange={(e) => setPerfil(e.target.value as PerfilRuta)} className={INPUT}>
-              {PERFILES.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Boton onClick={calcularRuta} ocupado={calcular.isPending} disabled={!puedeCalcular || isDirty}>
-            {etapa.traza ? 'Recalcular recorrido' : 'Calcular recorrido'}
+          {!esViaje && (
+            <label className="flex flex-col gap-1 text-sm font-semibold">
+              Tipo de recorrido
+              <select value={perfil} onChange={(e) => setPerfil(e.target.value as PerfilRuta)} className={INPUT}>
+                {PERFILES.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <Boton onClick={isDirty ? guardarEtapa(true) : calcularRuta} disabled={!puedeCalcular || calculando}>
+            {calculando
+              ? 'Calculando…'
+              : isDirty
+                ? 'Guardar y calcular recorrido'
+                : etapa.traza
+                  ? 'Recalcular recorrido'
+                  : 'Calcular recorrido'}
           </Boton>
           <Campo etiqueta="Kilómetros" ayuda="Se rellenan al calcular; puedes corregirlos" className="w-44">
             {(p) => <input {...p} {...register('km')} inputMode="decimal" className={INPUT} />}
@@ -257,9 +424,9 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
         </div>
         <p className="m-0 text-[13px] text-gris">
           {!puedeCalcular
-            ? 'Indica origen y destino y guarda para calcular el recorrido.'
+            ? 'Indica origen y destino para calcular el recorrido.'
             : isDirty
-              ? 'Guarda los cambios para recalcular el recorrido.'
+              ? 'Hay cambios sin guardar: se guardarán al calcular.'
               : etapa.traza
                 ? `Recorrido guardado: ${numeroKm(etapa.km ?? 0)} km${etapa.desnivelPos !== null ? ` · ${desnivel(etapa.desnivelPos)}` : ''}.`
                 : 'Todavía sin recorrido.'}
@@ -279,7 +446,14 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
           className="ml-auto"
           ocupado={borrar.isPending}
           onClick={() => {
-            if (confirm(`¿Borrar la etapa «${etapa.titulo}»? Sus lugares, fotos y notas se quedan en el tramo.`)) borrar.mutate(undefined);
+            if (
+              confirm(
+                esViaje
+                  ? `¿Borrar «${etapa.titulo}»?`
+                  : `¿Borrar la etapa «${etapa.titulo}»? Se borran también sus sitios para dormir y comer; las fotos y notas se quedan en el tramo.`,
+              )
+            )
+              borrar.mutate(undefined);
           }}
         >
           Borrar etapa

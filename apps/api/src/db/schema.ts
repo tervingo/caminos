@@ -16,12 +16,14 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import type { BBox, LineString, Punto } from '@caminos/shared';
+import type { BBox, LineString, Punto, Sitio } from '@caminos/shared';
 
 export const estadoTramo = pgEnum('estado_tramo', ['borrador', 'publicado']);
-export const tipoLugar = pgEnum('tipo_lugar', ['dormir', 'comer', 'ver']);
+// «Qué ver» no es un tipo de lugar: son los sitios de interés de cada etapa (etapas.sitios)
+export const tipoLugar = pgEnum('tipo_lugar', ['dormir', 'comer']);
 
 export const caminos = pgTable('caminos', {
   id: serial('id').primaryKey(),
@@ -59,6 +61,10 @@ export const etapas = pgTable(
       .references(() => tramos.id, { onDelete: 'cascade' }),
     posicion: integer('posicion').notNull(),
     titulo: text('titulo').notNull(),
+    /** 'camino', o el viaje en coche de 'ida' o 'vuelta' (posición 0 y -1, fuera de la numeración) */
+    tipo: text('tipo', { enum: ['camino', 'ida', 'vuelta'] })
+      .notNull()
+      .default('camino'),
     fecha: date('fecha'),
     origen: text('origen'),
     origenLat: doublePrecision('origen_lat'),
@@ -77,11 +83,16 @@ export const etapas = pgTable(
       .default('carretera'),
     bbox: jsonb('bbox').$type<BBox>(),
     gpxKey: text('gpx_key'),
+    /** Sitios de interés de la etapa (no tienen por qué estar en la ruta) */
+    sitios: jsonb('sitios').$type<Sitio[]>().notNull().default([]),
   },
   (t) => [
     // En la migración se marca DEFERRABLE INITIALLY DEFERRED para poder reordenar.
     unique('etapas_tramo_id_posicion_unique').on(t.tramoId, t.posicion),
     check('etapas_traza_origen_check', sql`${t.trazaOrigen} in ('carretera', 'gpx', 'manual')`),
+    check('etapas_tipo_check', sql`${t.tipo} in ('camino', 'ida', 'vuelta')`),
+    // Como mucho una ida y una vuelta por tramo
+    uniqueIndex('etapas_tramo_id_tipo_viaje_idx').on(t.tramoId, t.tipo).where(sql`${t.tipo} <> 'camino'`),
   ],
 );
 
@@ -92,7 +103,10 @@ export const lugares = pgTable(
     tramoId: uuid('tramo_id')
       .notNull()
       .references(() => tramos.id, { onDelete: 'cascade' }),
-    etapaId: uuid('etapa_id').references(() => etapas.id, { onDelete: 'set null' }),
+    // Dónde dormir y comer son siempre de una etapa; se borran con ella
+    etapaId: uuid('etapa_id')
+      .notNull()
+      .references(() => etapas.id, { onDelete: 'cascade' }),
     tipo: tipoLugar('tipo').notNull(),
     nombre: text('nombre').notNull(),
     localidad: text('localidad'),

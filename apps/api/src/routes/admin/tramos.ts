@@ -1,4 +1,4 @@
-import { asc, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import {
   type Camino,
@@ -53,7 +53,11 @@ export const tramosAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
     const ids = filas.map((f) => f.tramo.id);
     const idsPortada = filas.map((f) => f.tramo.portadaFotoId).filter((id): id is string => id !== null);
     const [cuentas, portadas] = await Promise.all([
-      db.select({ tramoId: etapas.tramoId, n: count() }).from(etapas).where(inArray(etapas.tramoId, ids)).groupBy(etapas.tramoId),
+      db
+        .select({ tramoId: etapas.tramoId, n: count() })
+        .from(etapas)
+        .where(and(inArray(etapas.tramoId, ids), eq(etapas.tipo, 'camino')))
+        .groupBy(etapas.tramoId),
       idsPortada.length > 0 ? db.select().from(fotos).where(inArray(fotos.id, idsPortada)) : [],
     ]);
     const numEtapas = new Map(cuentas.map((c) => [c.tramoId, c.n]));

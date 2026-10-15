@@ -102,7 +102,7 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
           <div id="etapas" className="min-w-0 flex-[1_1_340px] lg:max-w-[440px]">
             <h2 className={`m-0 mb-1 ${ROTULO} text-gris`}>Etapas</h2>
             <p className="mt-0 mb-2 text-sm text-gris">Toca una etapa para verla de cerca en el mapa.</p>
-            <StageList etapas={tramo.etapas} elegida={elegida} onElegir={elegirEtapa} />
+            <StageList etapas={tramo.etapas} ida={tramo.ida} vuelta={tramo.vuelta} elegida={elegida} onElegir={elegirEtapa} />
           </div>
           <div id="mapa" className="min-w-0 flex-[2_1_560px]">
             <MapaDiferido
@@ -128,8 +128,8 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
       </section>
 
       <section id="lugares" className={`${CONTENEDOR} pt-16`}>
-        <h2 className={`${TITULO_SECCION} mb-5`}>Dónde dormir, comer y qué ver</h2>
-        <PlaceCards lugares={tramo.lugares} onVerEnMapa={(id) => verEnMapa('lugar', id)} />
+        <h2 className={`${TITULO_SECCION} mb-5`}>Dónde dormir y comer</h2>
+        <PlaceCards lugares={tramo.lugares} etapas={tramo.etapas} onVerEnMapa={(id) => verEnMapa('lugar', id)} />
       </section>
 
       <section id="notas" className={`${CONTENEDOR} pt-16`}>

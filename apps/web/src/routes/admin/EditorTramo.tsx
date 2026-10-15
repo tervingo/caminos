@@ -6,7 +6,6 @@ import { Aviso, CONTENEDOR } from '../../components/ui';
 import { DatosTramo } from '../../features/admin/DatosTramo';
 import { EtapasEditor } from '../../features/admin/EtapasEditor';
 import { FotosEditor } from '../../features/admin/FotosEditor';
-import { LugaresEditor } from '../../features/admin/LugaresEditor';
 import { NotasEditor } from '../../features/admin/NotasEditor';
 import { Boton, MensajeError, Seccion } from '../../features/admin/ui';
 import { ApiError } from '../../lib/api';
@@ -19,7 +18,6 @@ const SECCIONES = [
   ['datos', 'Datos'],
   ['etapas', 'Etapas'],
   ['fotos', 'Fotos'],
-  ['lugares', 'Lugares'],
   ['notas', 'Notas'],
 ] as const;
 
@@ -108,10 +106,6 @@ function Editor({ tramo }: { tramo: TramoEditor }) {
 
       <Seccion id="fotos" titulo="Fotos">
         <FotosEditor tramo={tramo} />
-      </Seccion>
-
-      <Seccion id="lugares" titulo="Dónde dormir, comer y qué ver">
-        <LugaresEditor tramo={tramo} />
       </Seccion>
 
       <Seccion id="notas" titulo="Notas del año">

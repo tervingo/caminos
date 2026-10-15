@@ -4,6 +4,7 @@ import { finEtapa, inicioEtapa, limitesDeBbox, limitesDePuntos, limitesEtapa, ni
 
 const etapa = (parcial: Partial<Etapa>): Etapa => ({
   id: '00000000-0000-4000-8000-000000000000',
+  tipo: 'camino',
   posicion: 1,
   titulo: 'A → B',
   fecha: null,
@@ -17,6 +18,7 @@ const etapa = (parcial: Partial<Etapa>): Etapa => ({
   traza: null,
   trazaOrigen: 'carretera',
   bbox: null,
+  sitios: [],
   ...parcial,
 });
 
@@ -70,6 +72,19 @@ describe('etapas', () => {
       [42.046, -8.7],
       [42.3, -8.619],
     ]);
+  });
+
+  it('el recuadro de la etapa incluye sus sitios de interés, aunque estén fuera de la ruta', () => {
+    const e = etapa({
+      origen: { nombre: 'A', lat: 43.0, lon: -4.0 },
+      destino: { nombre: 'B', lat: 43.1, lon: -4.1 },
+      sitios: [{ nombre: 'Cueva', localidad: null, lat: 43.3, lon: -4.3, nota: null }],
+    });
+    expect(limitesEtapa(e)).toEqual([
+      [43.0, -4.3],
+      [43.3, -4.0],
+    ]);
+    expect(finEtapa(e)).toEqual([43.1, -4.1]);
   });
 
   it('sin traza ni puntos no tiene posición', () => {

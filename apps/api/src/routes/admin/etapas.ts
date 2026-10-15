@@ -15,6 +15,9 @@ import { cargarTramo, type OpcionesAdmin, recalcularTramo, tramoEditor, type Tx 
 
 type Params = { Params: { id: string } };
 
+/** La ida y la vuelta quedan fuera de la numeración 1, 2, 3… de las etapas del Camino */
+const POSICION_VIAJE = { ida: 0, vuelta: -1 } as const;
+
 /** Columnas de origen y destino a partir de los puntos del formulario */
 function columnasPuntos(datos: { origen?: Punto | null; destino?: Punto | null }) {
   return {
@@ -46,10 +49,20 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
   app.post<Params>('/api/admin/tramos/:id/etapas', async (req, reply): Promise<TramoEditor> => {
     const { tramo } = await cargarTramo(db, req.params.id);
     const datos = validar(etapaEntradaSchema, req.body);
-    const [{ ultima }] = await db.select({ ultima: max(etapas.posicion) }).from(etapas).where(eq(etapas.tramoId, tramo.id));
+    const tipo = datos.tipo ?? 'camino';
+    let posicion: number;
+    if (tipo === 'camino') {
+      const [{ ultima }] = await db.select({ ultima: max(etapas.posicion) }).from(etapas).where(eq(etapas.tramoId, tramo.id));
+      posicion = Math.max(ultima ?? 0, 0) + 1;
+    } else {
+      const [ya] = await db.select({ id: etapas.id }).from(etapas).where(and(eq(etapas.tramoId, tramo.id), eq(etapas.tipo, tipo)));
+      if (ya) throw new HttpError(409, 'viaje-repetido', `Este tramo ya tiene ${tipo === 'ida' ? 'ida' : 'vuelta'}`);
+      posicion = POSICION_VIAJE[tipo];
+    }
     await db.insert(etapas).values({
       tramoId: tramo.id,
-      posicion: (ultima ?? 0) + 1,
+      tipo,
+      posicion,
       titulo: datos.titulo,
       fecha: datos.fecha ?? null,
       ...columnasPuntos(datos),
@@ -58,6 +71,7 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
       km: datos.km ?? null,
       desnivelPos: datos.desnivelPos ?? null,
       desnivelNeg: datos.desnivelNeg ?? null,
+      sitios: datos.sitios ?? [],
     });
     await recalcularTramo(db, tramo.id);
     reply.code(201);
@@ -91,7 +105,7 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
       const restantes = await tx
         .select({ id: etapas.id })
         .from(etapas)
-        .where(and(eq(etapas.tramoId, etapa.tramoId), ne(etapas.id, etapa.id)))
+        .where(and(eq(etapas.tramoId, etapa.tramoId), ne(etapas.id, etapa.id), eq(etapas.tipo, 'camino')))
         .orderBy(asc(etapas.posicion));
       await numerar(
         tx,
@@ -105,7 +119,10 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
   app.put<Params>('/api/admin/tramos/:id/etapas/orden', async (req): Promise<TramoEditor> => {
     const { tramo } = await cargarTramo(db, req.params.id);
     const { ids } = validar(ordenEtapasSchema, req.body);
-    const actuales = await db.select({ id: etapas.id }).from(etapas).where(eq(etapas.tramoId, tramo.id));
+    const actuales = await db
+      .select({ id: etapas.id })
+      .from(etapas)
+      .where(and(eq(etapas.tramoId, tramo.id), eq(etapas.tipo, 'camino')));
     const mismas = ids.length === actuales.length && new Set(ids).size === ids.length && actuales.every((e) => ids.includes(e.id));
     if (!mismas) throw new HttpError(400, 'orden-incompleto', 'El orden debe incluir todas las etapas del tramo, una vez cada una');
     await db.transaction((tx) => numerar(tx, ids));
@@ -126,7 +143,8 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
       [etapa.destinoLon, etapa.destinoLat],
     ];
     const ruta = await ors.ruta(puntos, perfil);
-    const coordenadas = simplificar(ruta.coordenadas);
+    // La ida y la vuelta solo se ven en la vista de la península: basta con mucho menos detalle
+    const coordenadas = simplificar(ruta.coordenadas, etapa.tipo === 'camino' ? 5 : 150);
 
     await db
       .update(etapas)
@@ -135,8 +153,9 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
         trazaOrigen: 'carretera',
         bbox: bboxDe(coordenadas),
         km: Math.round(ruta.metros / 10) / 100,
-        desnivelPos: ruta.subida === null ? null : Math.round(ruta.subida),
-        desnivelNeg: ruta.bajada === null ? null : Math.round(ruta.bajada),
+        // El desnivel de un viaje en coche (la ida o la vuelta) no dice nada: solo se guarda en las etapas
+        desnivelPos: ruta.subida === null || etapa.tipo !== 'camino' ? null : Math.round(ruta.subida),
+        desnivelNeg: ruta.bajada === null || etapa.tipo !== 'camino' ? null : Math.round(ruta.bajada),
       })
       .where(eq(etapas.id, etapa.id));
     await recalcularTramo(db, etapa.tramoId);

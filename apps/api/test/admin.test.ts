@@ -166,6 +166,52 @@ describe.skipIf(!url)('editor (API de autor)', () => {
       expect(tramo.etapas[0].traza).not.toBeNull();
     });
 
+    it('guarda los sitios de interés de una etapa sin tocar su ruta, y amplían el recuadro', async () => {
+      const etapa = tramo.etapas[0];
+      const antes = tramo.bbox!;
+      tramo = await editor('PATCH', `/api/admin/etapas/${etapa.id}`, {
+        sitios: [
+          { nombre: 'Monte Jaizkibel', localidad: 'Hondarribia', lat: 43.5, lon: -1.85, nota: '' },
+          { nombre: 'Santuario de Guadalupe', localidad: '', lat: 43.35, lon: -1.82 },
+        ],
+      });
+      expect(tramo.etapas[0].sitios).toEqual([
+        { nombre: 'Monte Jaizkibel', localidad: 'Hondarribia', lat: 43.5, lon: -1.85, nota: null },
+        { nombre: 'Santuario de Guadalupe', localidad: null, lat: 43.35, lon: -1.82, nota: null },
+      ]);
+      expect(tramo.etapas[0].traza).not.toBeNull();
+      expect(tramo.bbox![3]).toBe(43.5);
+      expect(tramo.bbox![3]).toBeGreaterThan(antes[3]);
+      const publico = tramoDetalleSchema.parse((await app.inject({ url: '/api/tramos/2027-del-norte', cookies: { sesion: cookie } })).json());
+      expect(publico.etapas[0].sitios).toHaveLength(2);
+      expect((await pedir('PATCH', `/api/admin/etapas/${etapa.id}`, { sitios: [{ nombre: '', lat: 1, lon: 1 }] })).statusCode).toBe(400);
+    });
+
+    it('la ida y la vuelta en coche van aparte y no cuentan en los totales ni en el recuadro', async () => {
+      const antes = { km: tramo.kmTotal, desnivel: tramo.desnivelPosTotal, bbox: tramo.bbox, etapas: tramo.etapas.map((e) => e.id) };
+      const barcelona = { nombre: 'Barcelona', lat: 41.39, lon: 2.17 };
+      const irun = { nombre: 'Irún', lat: 43.338, lon: -1.789 };
+      tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/etapas`, { tipo: 'ida', titulo: 'Barcelona → Irún', origen: barcelona, destino: irun });
+      tramo = await editor('POST', `/api/admin/etapas/${tramo.ida!.id}/calcular-ruta`, {});
+      tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/etapas`, { tipo: 'vuelta', titulo: 'San Sebastián → Barcelona' });
+      expect(tramo.ida).toMatchObject({ tipo: 'ida', km: 12.35, titulo: 'Barcelona → Irún', desnivelPos: null, desnivelNeg: null });
+      expect(tramo.vuelta).toMatchObject({ tipo: 'vuelta' });
+      expect(tramo.etapas.map((e) => e.id)).toEqual(antes.etapas);
+      expect(tramo.numEtapas).toBe(antes.etapas.length);
+      expect({ km: tramo.kmTotal, desnivel: tramo.desnivelPosTotal, bbox: tramo.bbox }).toEqual({ km: antes.km, desnivel: antes.desnivel, bbox: antes.bbox });
+
+      expect((await pedir('POST', `/api/admin/tramos/${tramo.id}/etapas`, { tipo: 'ida', titulo: 'Otra' })).statusCode).toBe(409);
+      // Una etapa no cambia de tipo
+      expect((await pedir('PATCH', `/api/admin/etapas/${tramo.ida!.id}`, { tipo: 'camino' })).statusCode).toBe(400);
+      // El orden solo afecta a las etapas del Camino
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/etapas/orden`, { ids: [...antes.etapas].reverse() });
+      expect(tramo.etapas.map((e) => e.posicion)).toEqual([1, 2]);
+      tramo = await editor('DELETE', `/api/admin/etapas/${tramo.vuelta!.id}`);
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/etapas/orden`, { ids: antes.etapas });
+      expect(tramo.vuelta).toBeNull();
+      expect(tramo.ida).not.toBeNull();
+    });
+
     it('no calcula rutas sin origen y destino', async () => {
       tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/etapas`, { titulo: 'Sin puntos' });
       const res = await pedir('POST', `/api/admin/etapas/${tramo.etapas[2].id}/calcular-ruta`, {});
@@ -192,8 +238,16 @@ describe.skipIf(!url)('editor (API de autor)', () => {
 
       tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/lugares`, { ...lugar, etapaId: tramo.etapas[0].id });
       expect(tramo.lugares[0]).toMatchObject({ nombre: 'Sidrería', url: null, etapaId: tramo.etapas[0].id });
-      tramo = await editor('PATCH', `/api/admin/lugares/${tramo.lugares[0].id}`, { nota: 'Txuleta', etapaId: null });
-      expect(tramo.lugares[0]).toMatchObject({ nota: 'Txuleta', etapaId: null });
+      tramo = await editor('PATCH', `/api/admin/lugares/${tramo.lugares[0].id}`, { nota: 'Txuleta' });
+      expect(tramo.lugares[0]).toMatchObject({ nota: 'Txuleta', etapaId: tramo.etapas[0].id });
+
+      // Dormir y comer van siempre con etapa, y «qué ver» ya no es un tipo de lugar (son sitios de interés)
+      const sinEtapa = await pedir('PATCH', `/api/admin/lugares/${tramo.lugares[0].id}`, { etapaId: null });
+      expect(sinEtapa.statusCode).toBe(400);
+      expect(sinEtapa.json().error.details.map((d: { campo: string }) => d.campo)).toEqual(['etapaId']);
+      expect((await pedir('POST', `/api/admin/tramos/${tramo.id}/lugares`, { ...lugar, tipo: 'dormir' })).statusCode).toBe(400);
+      const queVer = await pedir('POST', `/api/admin/tramos/${tramo.id}/lugares`, { ...lugar, tipo: 'ver', etapaId: tramo.etapas[0].id });
+      expect(queVer.json().error.details.map((d: { campo: string }) => d.campo)).toEqual(['tipo']);
 
       tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/notas`, { texto: 'Lluvia todo el día', fecha: '2027-09-11' });
       expect(tramo.notas).toHaveLength(1);

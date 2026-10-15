@@ -45,7 +45,7 @@ export function limitesDePuntos(puntos: LatLon[]): Limites | null {
 /** Recuadro de todo lo que se pinta del tramo: etapas, lugares y fotos con posición */
 export function limitesTramo(tramo: TramoDetalle): Limites | null {
   const puntos: LatLon[] = [
-    ...tramo.etapas.flatMap(puntosEtapa),
+    ...tramo.etapas.flatMap((e) => [...puntosEtapa(e), ...puntosSitios(e)]),
     ...tramo.lugares.map((l): LatLon => [l.lat, l.lon]),
     ...tramo.fotos.flatMap((f): LatLon[] => (f.lat !== null && f.lon !== null ? [[f.lat, f.lon]] : [])),
   ];
@@ -59,8 +59,12 @@ export function puntosEtapa(etapa: Etapa): LatLon[] {
   return [etapa.origen, ...etapa.via, etapa.destino].flatMap((p): LatLon[] => (p ? [[p.lat, p.lon]] : []));
 }
 
+const puntosSitios = (etapa: Etapa): LatLon[] => etapa.sitios.map((s): LatLon => [s.lat, s.lon]);
+
+/** Recuadro de la etapa: su ruta y sus sitios de interés */
 export function limitesEtapa(etapa: Etapa): Limites | null {
-  return etapa.bbox ? limitesDeBbox(etapa.bbox) : limitesDePuntos(puntosEtapa(etapa));
+  const ruta = etapa.bbox ? limitesDeBbox(etapa.bbox) : puntosEtapa(etapa);
+  return limitesDePuntos([...ruta, ...puntosSitios(etapa)]);
 }
 
 export function inicioEtapa(etapa: Etapa): LatLon | null {

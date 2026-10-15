@@ -1,3 +1,4 @@
+import { Agent } from 'node:http';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -9,7 +10,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:3000',
+      // Sin reutilizar conexiones: evita los ECONNRESET del proxy que dejaban peticiones colgadas
+      '/api': { target: 'http://localhost:3000', agent: new Agent({ keepAlive: false }) },
     },
   },
 });

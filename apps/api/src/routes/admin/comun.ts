@@ -51,7 +51,11 @@ export async function comprobarEtapa(db: Ejecutor, tramoId: string, etapaId: str
  * de todo lo que se pinta en el mapa. Si ninguna etapa tiene desnivel, conserva el del tramo.
  */
 export async function recalcularTramo(db: Ejecutor, tramoId: string): Promise<void> {
-  const filasEtapas = await db.select().from(etapas).where(eq(etapas.tramoId, tramoId));
+  // La ida y la vuelta en coche no cuentan para km, desnivel ni el recuadro del tramo
+  const filasEtapas = await db
+    .select()
+    .from(etapas)
+    .where(and(eq(etapas.tramoId, tramoId), eq(etapas.tipo, 'camino')));
   const filasLugares = await db.select({ lat: lugares.lat, lon: lugares.lon }).from(lugares).where(eq(lugares.tramoId, tramoId));
   const filasFotos = await db
     .select({ lat: fotos.lat, lon: fotos.lon })
@@ -66,6 +70,7 @@ export async function recalcularTramo(db: Ejecutor, tramoId: string): Promise<vo
       for (const p of e.via ?? []) coords.push([p.lon, p.lat]);
       if (e.destinoLat !== null && e.destinoLon !== null) coords.push([e.destinoLon, e.destinoLat]);
     }
+    coords.push(...e.sitios.map((p): Coord => [p.lon, p.lat]));
   }
   coords.push(...filasLugares.map((l): Coord => [l.lon, l.lat]));
   coords.push(...filasFotos.map((f): Coord => [f.lon!, f.lat!]));

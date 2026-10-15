@@ -59,7 +59,10 @@ describe.skipIf(!url)('API con base de datos', () => {
       ]);
       expect(tramo.etapas[0].origen).toEqual({ nombre: 'Saint-Jean', lat: 43.163, lon: -1.238 });
       expect(tramo.etapas[0].traza?.coordinates[0]).toEqual([-1.238, 43.163]);
-      expect(tramo.lugares).toHaveLength(5);
+      // Los «qué ver» de la semilla son sitios de interés de su etapa
+      expect(tramo.lugares).toHaveLength(4);
+      expect(tramo.lugares.every((l) => l.etapaId !== null)).toBe(true);
+      expect(tramo.etapas[0].sitios).toMatchObject([{ nombre: 'Colegiata y museo', localidad: 'Roncesvalles' }]);
       expect(tramo.notas).toHaveLength(2);
     });
 

@@ -38,6 +38,7 @@ export function aFotoEditor(assetsUrl: string, f: FilaFoto): FotoEditor {
 export function aEtapa(e: FilaEtapa): Etapa {
   return {
     id: e.id,
+    tipo: e.tipo,
     posicion: e.posicion,
     titulo: e.titulo,
     fecha: e.fecha,
@@ -46,11 +47,13 @@ export function aEtapa(e: FilaEtapa): Etapa {
     via: e.via ?? [],
     notas: e.notas,
     km: e.km,
-    desnivelPos: e.desnivelPos,
-    desnivelNeg: e.desnivelNeg,
+    // La ida y la vuelta nunca muestran desnivel (aunque se calculara antes de esta regla)
+    desnivelPos: e.tipo === 'camino' ? e.desnivelPos : null,
+    desnivelNeg: e.tipo === 'camino' ? e.desnivelNeg : null,
     traza: e.traza,
     trazaOrigen: e.trazaOrigen,
     bbox: e.bbox,
+    sitios: e.sitios,
   };
 }
 
@@ -78,8 +81,12 @@ async function contenido(db: Db, tramoId: string) {
     db.select().from(fotos).where(eq(fotos.tramoId, tramoId)).orderBy(asc(fotos.orden)),
     db.select().from(notas).where(eq(notas.tramoId, tramoId)).orderBy(asc(notas.fecha)),
   ]);
+  const todas = filasEtapas.map(aEtapa);
   return {
-    etapas: filasEtapas.map(aEtapa),
+    // La ida y la vuelta van aparte: no cuentan como etapas del Camino
+    etapas: todas.filter((e) => e.tipo === 'camino'),
+    ida: todas.find((e) => e.tipo === 'ida') ?? null,
+    vuelta: todas.find((e) => e.tipo === 'vuelta') ?? null,
     lugares: filasLugares.map(
       (l): Lugar => ({
         id: l.id,

@@ -8,6 +8,27 @@
       "when": 1792010285601,
       "tag": "0000_inicial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792088287889,
+      "tag": "0001_sitios",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792089166320,
+      "tag": "0002_que-ver-a-sitios",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792089626724,
+      "tag": "0003_ida-y-vuelta",
+      "breakpoints": true
     }
   ]
 }
