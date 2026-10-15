@@ -2,15 +2,22 @@
 @import '@fontsource-variable/newsreader';
 @import '@fontsource-variable/instrument-sans';
 
+/* Colores y tipografía del mock-up D */
 @theme {
   --color-papel: #f2f1ea;
   --color-tinta: #14231c;
   --color-bosque: #1e4d3a;
+  --color-pizarra: #2b3a32;
   --color-musgo: #46544c;
   --color-gris: #5a665f;
   --color-linea: #d8d8cc;
+  --color-linea-suave: #ecece3;
+  --color-borde: #b9bdaf;
   --color-ocre: #e2ae2d;
   --color-azul: #234e8f;
+  --color-ambar: #b07a0f;
+  --color-ambar-oscuro: #8a5f08;
+  --color-agua: #aad3df;
 
   --font-serif: 'Newsreader Variable', Newsreader, serif;
   --font-sans: 'Instrument Sans Variable', 'Instrument Sans', system-ui, sans-serif;
@@ -18,4 +25,14 @@
 
 body {
   @apply bg-papel text-tinta font-sans antialiased;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+dialog::backdrop {
+  background: rgb(20 35 28 / 0.85);
 }
