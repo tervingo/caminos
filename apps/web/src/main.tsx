@@ -6,6 +6,24 @@ import { ApiError } from './lib/api';
 import { router } from './router';
 import './styles.css';
 
+// Tras un despliegue, una pestaña abierta pide trozos de la versión anterior que ya no existen:
+// se recarga una vez para traer la nueva (y no en bucle si el fallo es otro)
+window.addEventListener('vite:preloadError', (evento) => {
+  const ahora = Date.now();
+  let ultima: number;
+  try {
+    ultima = Number(sessionStorage.getItem('caminos:recarga') ?? 0);
+    sessionStorage.setItem('caminos:recarga', String(ahora));
+  } catch {
+    // Sin almacenamiento de sesión no hay forma de evitar el bucle: no se recarga
+    return;
+  }
+  if (ahora - ultima > 10_000) {
+    evento.preventDefault();
+    window.location.reload();
+  }
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
