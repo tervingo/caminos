@@ -35,6 +35,16 @@ npm run dev              # web en http://localhost:5173, API en http://localhost
 | `GET /api/health` | Público |
 | `GET /api/caminos`, `GET /api/tramos`, `GET /api/tramos/:slug` | Público (solo tramos publicados) |
 | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` | Autor (cookie `sesion`, 7 días) |
+| `GET/POST /api/admin/tramos`, `GET/PATCH/DELETE /api/admin/tramos/:id`, `POST …/:id/publicar` y `…/despublicar` | Autor |
+| `POST /api/admin/caminos` | Autor |
+| `POST /api/admin/tramos/:id/etapas`, `PUT …/etapas/orden`, `PATCH/DELETE /api/admin/etapas/:id`, `POST …/:id/calcular-ruta` | Autor |
+| `POST /api/admin/tramos/:id/lugares` y `/notas`, `PATCH/DELETE /api/admin/lugares/:id` y `/notas/:id` | Autor |
+| `POST /api/admin/tramos/:id/fotos/firmar`, `POST …/:id/fotos`, `PATCH/DELETE /api/admin/fotos/:id` | Autor |
+| `GET /api/admin/geo/buscar?q=`, `GET /api/admin/geo/inverso?lat=&lon=` | Autor (buscador de OpenRouteService) |
+
+Las escrituras del editor devuelven el tramo completo (`TramoEditor`). Los totales del tramo (km, desnivel y recuadro) se recalculan solos. `calcular-ruta` usa OpenRouteService (`ORS_API_KEY`) y guarda la traza simplificada, los km y el desnivel. Un borrador se puede previsualizar en `/tramos/:slug` con la sesión del autor.
+
+**Editor web**: `/admin` (enlace «Acceso del autor» al pie). Las fotos se reducen en el navegador a WebP de 2000 y 480 px (el original y sus EXIF no se suben), van directas a R2 con URL firmada y se asignan a su etapa por la fecha de la foto.
 
 Las escrituras exigen la cabecera `Origin` de un origen permitido (`ALLOWED_ORIGIN`). Errores: `{ "error": { "code", "message", "details" } }`.
 
@@ -49,7 +59,7 @@ Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resu
 - Build command: `npm ci --include=dev && npm run build:api` (con `NODE_ENV=production`, npm omitiría TypeScript)
 - Start command: `npm run start:api` (aplica las migraciones y arranca)
 - Health check path: `/api/health`
-- Variables: `NODE_ENV=production`, `DATABASE_URL` (rama main), `JWT_SECRET` (obligatoria) y las de R2
+- Variables: `NODE_ENV=production`, `DATABASE_URL` (rama main), `JWT_SECRET` (obligatoria), las de R2 y `ORS_API_KEY`
 
 Si el servicio de Render no se llama `caminos-api`, cambia la URL del proxy en `netlify.toml`.
 

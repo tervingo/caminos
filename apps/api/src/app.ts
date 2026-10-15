@@ -8,12 +8,25 @@ import { COOKIE_SESION, comprobarOrigen } from './auth.js';
 import type { Config } from './config.js';
 import { type Conexion, comprobarDb } from './db/index.js';
 import { HttpError } from './errores.js';
+import { createOrs, type Ors } from './ors.js';
+import { createR2, type R2 } from './r2.js';
+import { adminRoutes } from './routes/admin/index.js';
 import { authRoutes } from './routes/auth.js';
 import { publicoRoutes } from './routes/publico.js';
 
 const error = (code: string, message: string, details?: unknown): ApiError => ({ error: { code, message, details } });
 
-export function buildApp(config: Config, conexion?: Conexion) {
+/** Servicios externos; los tests pasan dobles en lugar de los reales */
+export interface Servicios {
+  r2?: R2;
+  ors?: Ors;
+}
+
+export function buildApp(
+  config: Config,
+  conexion?: Conexion,
+  servicios: Servicios = { r2: createR2(config), ors: createOrs(config.ORS_API_KEY) },
+) {
   const app = Fastify({
     logger: config.NODE_ENV === 'test' ? false : { level: 'info' },
     // Render y el proxy de Netlify van delante: confiar en X-Forwarded-*
@@ -49,6 +62,7 @@ export function buildApp(config: Config, conexion?: Conexion) {
   if (conexion) {
     app.register(publicoRoutes, { db: conexion.db, assetsUrl: config.PUBLIC_ASSETS_URL });
     app.register(authRoutes, { db: conexion.db, secure: config.NODE_ENV === 'production' });
+    app.register(adminRoutes, { db: conexion.db, assetsUrl: config.PUBLIC_ASSETS_URL, ...servicios });
   }
 
   return app;

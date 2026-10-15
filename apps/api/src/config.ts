@@ -21,6 +21,8 @@ const envSchema = z
     R2_ACCESS_KEY_ID: opcional,
     R2_SECRET_ACCESS_KEY: opcional,
     R2_BUCKET: opcional,
+    /** OpenRouteService: rutas por carretera y buscador de localidades */
+    ORS_API_KEY: opcional,
   })
   .transform((env, ctx) => {
     if (env.NODE_ENV === 'production' && (!env.JWT_SECRET || env.JWT_SECRET.length < 32)) {

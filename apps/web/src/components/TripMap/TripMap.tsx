@@ -23,12 +23,9 @@ import {
   ZOOM_FOCO,
 } from '../../lib/geo';
 import { ACENTO, CAPAS, type Capa, COLOR_CAPA, icono } from './iconos';
+import { ATRIBUCION, TESELAS } from './teselas';
 import type { Foco, TripMapProps } from './tipos';
 
-const TESELAS = import.meta.env.VITE_TILES_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATRIBUCION =
-  import.meta.env.VITE_TILES_ATTRIBUTION ||
-  '© <a href="https://www.openstreetmap.org/copyright">colaboradores de OpenStreetMap</a>';
 
 const TINTA = '#14231C';
 const BOSQUE = '#1E4D3A';
@@ -112,6 +109,15 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
   useEffect(() => {
     if (mapa && etapa !== null) volarA(mapa, limitesEtapa(tramo.etapas[etapa]));
   }, [mapa, etapa, tramo]);
+
+  // En el editor el tramo cambia (etapa nueva, recorrido recalculado): se vuelve a encuadrar
+  const claveLimites = JSON.stringify(limites);
+  const limitesPrevios = useRef(claveLimites);
+  useEffect(() => {
+    if (!mapa || limitesPrevios.current === claveLimites) return;
+    limitesPrevios.current = claveLimites;
+    if (etapa === null) volarA(mapa, limites);
+  }, [mapa, claveLimites, limites, etapa]);
 
   useEffect(() => {
     if (mapa && foco) enfocar(mapa, foco);

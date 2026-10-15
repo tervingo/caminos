@@ -1,0 +1,111 @@
+// Cliente de OpenRouteService: rutas por carretera (con desnivel) y buscador de localidades.
+// La clave solo vive en el servidor.
+import type { LugarGeo, PerfilRuta } from '@caminos/shared';
+import { HttpError } from './errores.js';
+
+type Coord = [number, number]; // [lon, lat]
+
+export interface RutaCalculada {
+  coordenadas: Coord[];
+  metros: number;
+  /** Desnivel acumulado, si el servicio lo devuelve */
+  subida: number | null;
+  bajada: number | null;
+}
+
+export interface Ors {
+  ruta(puntos: Coord[], perfil: PerfilRuta): Promise<RutaCalculada>;
+  buscar(texto: string): Promise<LugarGeo[]>;
+  inverso(lat: number, lon: number): Promise<LugarGeo | null>;
+}
+
+const BASE = 'https://api.openrouteservice.org';
+// Los Caminos de la península y su arranque en Francia
+const PAISES = 'ESP,PRT,FRA,AND';
+
+interface FeatureGeo {
+  geometry: { coordinates: [number, number] };
+  properties: { name?: string; label?: string; locality?: string };
+}
+
+const aLugar = (f: FeatureGeo): LugarGeo => ({
+  nombre: f.properties.locality ?? f.properties.name ?? f.properties.label ?? 'Sin nombre',
+  etiqueta: f.properties.label ?? f.properties.name ?? '',
+  lat: f.geometry.coordinates[1],
+  lon: f.geometry.coordinates[0],
+});
+
+export function createOrs(apiKey: string | undefined, fetchFn: typeof fetch = fetch): Ors | undefined {
+  if (!apiKey) return undefined;
+
+  async function pedir<T>(ruta: string, init: RequestInit = {}): Promise<T> {
+    let res: Response;
+    try {
+      res = await fetchFn(`${BASE}${ruta}`, {
+        ...init,
+        headers: {
+          Authorization: apiKey!,
+          Accept: 'application/json, application/geo+json',
+          'Accept-Language': 'es',
+          ...init.headers,
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch {
+      throw new HttpError(502, 'servicio-rutas', 'OpenRouteService no responde');
+    }
+    if (res.ok) return (await res.json()) as T;
+
+    const cuerpo = (await res.json().catch(() => null)) as { error?: { code?: number; message?: string } } | null;
+    // 2004: distancia excesiva; 2009/2010: sin carretera cerca de algún punto
+    if (res.status === 404 || cuerpo?.error?.code === 2010 || cuerpo?.error?.code === 2009) {
+      throw new HttpError(422, 'ruta-imposible', 'No hay una ruta por carretera entre esos puntos', cuerpo?.error);
+    }
+    if (res.status === 429) throw new HttpError(429, 'demasiados-intentos', 'Límite de OpenRouteService alcanzado; prueba en un rato');
+    throw new HttpError(502, 'servicio-rutas', 'Error de OpenRouteService', cuerpo?.error);
+  }
+
+  return {
+    async ruta(puntos, perfil) {
+      const datos = await pedir<{
+        features: { geometry: { coordinates: number[][] }; properties: { summary?: { distance?: number }; ascent?: number; descent?: number } }[];
+      }>(`/v2/directions/${perfil}/geojson`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          coordinates: puntos,
+          elevation: true,
+          instructions: false,
+          // Las localidades no siempre caen sobre una carretera: se busca la más cercana en 5 km
+          radiuses: puntos.map(() => 5000),
+        }),
+      });
+      const ruta = datos.features[0];
+      if (!ruta) throw new HttpError(422, 'ruta-imposible', 'No hay una ruta por carretera entre esos puntos');
+      return {
+        coordenadas: ruta.geometry.coordinates.map(([lon, lat]) => [lon, lat]),
+        metros: ruta.properties.summary?.distance ?? 0,
+        subida: ruta.properties.ascent ?? null,
+        bajada: ruta.properties.descent ?? null,
+      };
+    },
+
+    async buscar(texto) {
+      const q = new URLSearchParams({ text: texto, size: '6', 'boundary.country': PAISES });
+      const datos = await pedir<{ features: FeatureGeo[] }>(`/geocode/search?${q}`);
+      return datos.features.map(aLugar);
+    },
+
+    async inverso(lat, lon) {
+      // Solo poblaciones: el punto de una etapa se nombra por su pueblo, no por el bar de al lado
+      const q = new URLSearchParams({
+        'point.lat': String(lat),
+        'point.lon': String(lon),
+        size: '1',
+        layers: 'locality,localadmin,borough,neighbourhood',
+      });
+      const datos = await pedir<{ features: FeatureGeo[] }>(`/geocode/reverse?${q}`);
+      return datos.features[0] ? { ...aLugar(datos.features[0]), lat, lon } : null;
+    },
+  };
+}

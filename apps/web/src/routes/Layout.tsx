@@ -1,6 +1,7 @@
 import { Link, Outlet, ScrollRestoration, useMatch } from 'react-router';
 import { Logo } from '../components/Logo';
 import { CONTENEDOR } from '../components/ui';
+import { pareceAutor } from '../lib/admin';
 
 const ANCLAS_TRAMO = [
   { href: '#etapas', label: 'Etapas' },
@@ -12,6 +13,7 @@ const ANCLAS_TRAMO = [
 
 export function Layout() {
   const enTramo = useMatch('/tramos/:slug') !== null;
+  const enAdmin = useMatch('/admin/*') !== null;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -30,6 +32,15 @@ export function Layout() {
                 </a>
               ))}
           </nav>
+          {/* Solo lo ve quien ya ha entrado alguna vez como autor en este navegador */}
+          {pareceAutor() && !enAdmin && (
+            <Link
+              to="/admin"
+              className="inline-flex min-h-11 items-center rounded-full border-2 border-tinta px-5 text-[15px] font-semibold hover:bg-tinta hover:text-white hover:no-underline"
+            >
+              Modo editor
+            </Link>
+          )}
         </div>
       </header>
 
@@ -39,7 +50,10 @@ export function Layout() {
 
       <footer className="mt-20 border-t border-linea">
         <div className={`${CONTENEDOR} py-6 text-[13px] text-gris`}>
-          Nuestro Camino · un tramo del Camino de Santiago cada año, contado por el grupo.
+          Nuestro Camino · un tramo del Camino de Santiago cada año, contado por el grupo.{' '}
+          <Link to="/admin" className="text-gris underline-offset-2">
+            Acceso del autor
+          </Link>
         </div>
       </footer>
       <ScrollRestoration />
