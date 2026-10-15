@@ -8,7 +8,7 @@ const TIPOS: { tipo: TipoLugar; titulo: string; borde: string; texto: string }[]
   { tipo: 'ver', titulo: 'Qué ver', borde: '#B07A0F', texto: '#8A5F08' },
 ];
 
-export function PlaceCards({ lugares }: { lugares: Lugar[] }) {
+export function PlaceCards({ lugares, onVerEnMapa }: { lugares: Lugar[]; onVerEnMapa: (id: string) => void }) {
   if (lugares.length === 0) return <p className="m-0 text-musgo">No hay lugares anotados en este tramo.</p>;
 
   return (
@@ -32,16 +32,22 @@ export function PlaceCards({ lugares }: { lugares: Lugar[] }) {
                   <div className="text-sm text-gris">{[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</div>
                 )}
                 {l.nota && <div className="mt-1 text-sm text-musgo">{l.nota}</div>}
-                {l.url && (
+                <div className="mt-1.5 flex flex-wrap gap-x-4 text-sm font-semibold text-bosque">
                   <a
-                    href={l.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1.5 inline-block text-sm font-semibold text-bosque"
+                    href="#mapa"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onVerEnMapa(l.id);
+                    }}
                   >
-                    Web del sitio ↗
+                    Ver en el mapa →
                   </a>
-                )}
+                  {l.url && (
+                    <a href={l.url} target="_blank" rel="noopener noreferrer">
+                      Web del sitio ↗
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>

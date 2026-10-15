@@ -42,7 +42,7 @@ Las escrituras exigen la cabecera `Origin` de un origen permitido (`ALLOWED_ORIG
 
 Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resuelva los workspaces y `packages/shared`).
 
-**Netlify**: lo lee todo de `netlify.toml`. Base directory vacío; build `npm run build:web`; publish `apps/web/dist`.
+**Netlify**: lo lee todo de `netlify.toml`. Base directory vacío; build `npm run build:web`; publish `apps/web/dist`. Opcional: `VITE_TILES_URL` y `VITE_TILES_ATTRIBUTION` para cambiar de proveedor de teselas (por defecto, OpenStreetMap con su atribución).
 
 **Render (Web Service, Node, plan Starter, región Frankfurt)**
 - Root directory: vacío (raíz del repositorio)

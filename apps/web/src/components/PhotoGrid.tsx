@@ -2,8 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { Foto } from '@caminos/shared';
 import { degradado } from './YearCard';
 
+interface Props {
+  fotos: Foto[];
+  anio: number;
+  onVerEnMapa: (id: string) => void;
+}
+
 /** Galería del tramo con visor a pantalla completa (dialog nativo: Esc cierra, foco atrapado) */
-export function PhotoGrid({ fotos, anio }: { fotos: Foto[]; anio: number }) {
+export function PhotoGrid({ fotos, anio, onVerEnMapa }: Props) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const [abierta, setAbierta] = useState<number | null>(null);
 
@@ -76,7 +82,21 @@ export function PhotoGrid({ fotos, anio }: { fotos: Foto[]; anio: number }) {
               className="h-auto max-h-[80dvh] w-auto max-w-[min(92vw,1600px)] rounded-lg object-contain"
             />
             <figcaption className="flex w-full flex-wrap items-center justify-between gap-3 text-sm">
-              <span>{foto.pie}</span>
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {foto.pie}
+                {foto.lat !== null && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAbierta(null);
+                      onVerEnMapa(foto.id);
+                    }}
+                    className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-ocre underline-offset-2 hover:underline"
+                  >
+                    Ver en el mapa →
+                  </button>
+                )}
+              </span>
               <span className="flex items-center gap-2">
                 {fotos.length > 1 && (
                   <>

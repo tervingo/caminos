@@ -4,6 +4,7 @@ import { CONTENEDOR } from '../components/ui';
 
 const ANCLAS_TRAMO = [
   { href: '#etapas', label: 'Etapas' },
+  { href: '#mapa', label: 'Mapa' },
   { href: '#galeria', label: 'Fotos' },
   { href: '#lugares', label: 'Lugares' },
   { href: '#notas', label: 'Notas' },

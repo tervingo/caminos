@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import type { TramoDetalle } from '@caminos/shared';
+import { MapaDiferido } from '../components/TripMap/MapaDiferido';
+import type { Foco, Vista } from '../components/TripMap/tipos';
 import { NoteList } from '../components/NoteList';
 import { PhotoGrid } from '../components/PhotoGrid';
 import { PlaceCards } from '../components/PlaceCards';
@@ -38,16 +41,31 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
   const [params, setParams] = useSearchParams();
   const n = Number(params.get('etapa'));
   const elegida = Number.isInteger(n) && n >= 1 && n <= tramo.etapas.length ? n - 1 : null;
-  const elegirEtapa = (i: number | null) =>
+  const vista: Vista = params.get('vista') === 'peninsula' ? 'peninsula' : 'tramo';
+  const { data: todos } = useTramos();
+  const otros = (todos ?? []).filter((t) => t.slug !== tramo.slug);
+  const [foco, setFoco] = useState<Foco | null>(null);
+
+  const cambiarParams = (cambios: Record<string, string | null>) =>
     setParams(
       (actuales) => {
         const p = new URLSearchParams(actuales);
-        if (i === null) p.delete('etapa');
-        else p.set('etapa', String(i + 1));
+        for (const [nombre, valor] of Object.entries(cambios)) {
+          if (valor === null) p.delete(nombre);
+          else p.set(nombre, valor);
+        }
         return p;
       },
       { replace: true, preventScrollReset: true },
     );
+  // Elegir una etapa acerca el mapa a ella, así que deja de estar en la vista de península
+  const elegirEtapa = (i: number | null) =>
+    cambiarParams(i === null ? { etapa: null } : { etapa: String(i + 1), vista: null });
+  const elegirVista = (v: Vista) => cambiarParams({ vista: v === 'tramo' ? null : v });
+  const verEnMapa = (tipo: Foco['tipo'], id: string) => {
+    setFoco((f) => ({ tipo, id, vez: (f?.vez ?? 0) + 1 }));
+    document.getElementById('mapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   const fechas = rangoFechas(tramo.fechaInicio, tramo.fechaFin);
 
@@ -82,15 +100,21 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
 
         <div className="mt-8 flex flex-wrap items-start gap-6">
           <div id="etapas" className="min-w-0 flex-[1_1_340px] lg:max-w-[440px]">
-            <h2 className={`m-0 mb-3 ${ROTULO} text-gris`}>Etapas</h2>
+            <h2 className={`m-0 mb-1 ${ROTULO} text-gris`}>Etapas</h2>
+            <p className="mt-0 mb-2 text-sm text-gris">Toca una etapa para verla de cerca en el mapa.</p>
             <StageList etapas={tramo.etapas} elegida={elegida} onElegir={elegirEtapa} />
           </div>
           <div id="mapa" className="min-w-0 flex-[2_1_560px]">
-            <div className="flex aspect-[900/560] items-center justify-center rounded-2xl border border-[#8FB5C2] bg-agua p-6 text-center">
-              <p className="m-0 max-w-xs rounded-xl bg-white/90 px-4 py-3 text-sm text-musgo">
-                Aquí irá el mapa del tramo, con sus etapas, lugares y fotos.
-              </p>
-            </div>
+            <MapaDiferido
+              key={tramo.slug}
+              tramo={tramo}
+              otros={otros}
+              etapa={elegida}
+              onEtapa={elegirEtapa}
+              vista={vista}
+              onVista={elegirVista}
+              foco={foco}
+            />
           </div>
         </div>
       </section>
@@ -100,12 +124,12 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
           <h2 className={TITULO_SECCION}>Fotos de {tramo.anio}</h2>
           {tramo.fotos.length > 0 && <span className="text-[15px] text-gris">{tramo.fotos.length} fotos</span>}
         </div>
-        <PhotoGrid fotos={tramo.fotos} anio={tramo.anio} />
+        <PhotoGrid fotos={tramo.fotos} anio={tramo.anio} onVerEnMapa={(id) => verEnMapa('foto', id)} />
       </section>
 
       <section id="lugares" className={`${CONTENEDOR} pt-16`}>
         <h2 className={`${TITULO_SECCION} mb-5`}>Dónde dormir, comer y qué ver</h2>
-        <PlaceCards lugares={tramo.lugares} />
+        <PlaceCards lugares={tramo.lugares} onVerEnMapa={(id) => verEnMapa('lugar', id)} />
       </section>
 
       <section id="notas" className={`${CONTENEDOR} pt-16`}>
