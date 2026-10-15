@@ -61,7 +61,7 @@ describe.skipIf(!url)('editor (API de autor)', () => {
     await migrar(conexion.db);
     await sembrar(conexion.db);
     await conexion.db.insert(usuarios).values({ email: 'autor@ejemplo.com', passwordHash: await hashPassword('una contraseña larga') });
-    app = buildApp(loadConfig({ NODE_ENV: 'test', ALLOWED_ORIGIN: ORIGEN }), conexion, { r2, ors: orsFalso });
+    app = buildApp(loadConfig({ NODE_ENV: 'test', ALLOWED_ORIGIN: ORIGEN }), conexion, { r2, ors: orsFalso, buscador: orsFalso });
     const login = await app.inject({
       method: 'POST',
       url: '/api/auth/login',

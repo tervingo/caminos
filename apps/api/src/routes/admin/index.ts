@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import type { LugarGeo } from '@caminos/shared';
 import { requiereAutor } from '../../auth.js';
-import { HttpError, validar } from '../../errores.js';
+import { validar } from '../../errores.js';
 import type { OpcionesAdmin } from './comun.js';
 import { contenidoAdmin } from './contenido.js';
 import { etapasAdmin } from './etapas.js';
@@ -21,19 +21,16 @@ export const adminRoutes: FastifyPluginAsync<OpcionesAdmin> = async (app, opcion
   await app.register(contenidoAdmin, opciones);
   await app.register(fotosAdmin, opciones);
 
-  // Buscador de localidades (OpenRouteService), para no exponer su clave en el navegador
-  const ors = () => {
-    if (!opciones.ors) throw new HttpError(503, 'rutas-sin-configurar', 'Falta la clave de OpenRouteService (ORS_API_KEY)');
-    return opciones.ors;
-  };
+  // Buscador de localidades desde el servidor, para no exponer la clave de ORS en el navegador
+  const { buscador } = opciones;
 
   app.get('/api/admin/geo/buscar', async (req): Promise<LugarGeo[]> => {
     const { q } = validar(busquedaSchema, req.query);
-    return ors().buscar(q);
+    return buscador.buscar(q);
   });
 
   app.get('/api/admin/geo/inverso', async (req): Promise<LugarGeo | null> => {
     const { lat, lon } = validar(puntoSchema, req.query);
-    return ors().inverso(lat, lon);
+    return buscador.inverso(lat, lon);
   });
 };

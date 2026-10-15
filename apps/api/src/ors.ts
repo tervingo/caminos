@@ -13,10 +13,14 @@ export interface RutaCalculada {
   bajada: number | null;
 }
 
-export interface Ors {
-  ruta(puntos: Coord[], perfil: PerfilRuta): Promise<RutaCalculada>;
+/** Buscador de localidades por nombre y por punto */
+export interface Buscador {
   buscar(texto: string): Promise<LugarGeo[]>;
   inverso(lat: number, lon: number): Promise<LugarGeo | null>;
+}
+
+export interface Ors extends Buscador {
+  ruta(puntos: Coord[], perfil: PerfilRuta): Promise<RutaCalculada>;
 }
 
 const BASE = 'https://api.openrouteservice.org';
@@ -56,13 +60,17 @@ export function createOrs(apiKey: string | undefined, fetchFn: typeof fetch = fe
     }
     if (res.ok) return (await res.json()) as T;
 
-    const cuerpo = (await res.json().catch(() => null)) as { error?: { code?: number; message?: string } } | null;
-    // 2004: distancia excesiva; 2009/2010: sin carretera cerca de algún punto
-    if (res.status === 404 || cuerpo?.error?.code === 2010 || cuerpo?.error?.code === 2009) {
-      throw new HttpError(422, 'ruta-imposible', 'No hay una ruta por carretera entre esos puntos', cuerpo?.error);
+    const cuerpo = (await res.json().catch(() => null)) as { error?: { code?: number; message?: string } | string } | null;
+    // Cupo agotado: 403 «Quota exceeded» (diario) o 429 (por minuto)
+    if (res.status === 403 || res.status === 429) {
+      throw new HttpError(429, 'cupo-agotado', 'Se ha agotado el cupo de OpenRouteService; prueba más tarde', cuerpo?.error);
     }
-    if (res.status === 429) throw new HttpError(429, 'demasiados-intentos', 'Límite de OpenRouteService alcanzado; prueba en un rato');
-    throw new HttpError(502, 'servicio-rutas', 'Error de OpenRouteService', cuerpo?.error);
+    const error = typeof cuerpo?.error === 'object' ? cuerpo.error : undefined;
+    // 2004: distancia excesiva; 2009/2010: sin carretera cerca de algún punto
+    if (res.status === 404 || error?.code === 2010 || error?.code === 2009) {
+      throw new HttpError(422, 'ruta-imposible', 'No hay una ruta por carretera entre esos puntos', error);
+    }
+    throw new HttpError(502, 'servicio-rutas', `Error de OpenRouteService (HTTP ${res.status})`, cuerpo?.error);
   }
 
   return {

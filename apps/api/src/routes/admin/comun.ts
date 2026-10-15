@@ -5,7 +5,7 @@ import { caminos, etapas, fotos, lugares, tramos } from '../../db/schema.js';
 import { HttpError, idValido, noEncontrado } from '../../errores.js';
 import { bboxDe } from '../../geo.js';
 import { columnasCamino, detalleEditor } from '../../lecturas.js';
-import type { Ors } from '../../ors.js';
+import type { Buscador, Ors } from '../../ors.js';
 import type { R2 } from '../../r2.js';
 
 export interface OpcionesAdmin {
@@ -13,6 +13,7 @@ export interface OpcionesAdmin {
   assetsUrl: string;
   r2?: R2;
   ors?: Ors;
+  buscador: Buscador;
 }
 
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
