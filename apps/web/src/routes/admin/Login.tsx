@@ -27,7 +27,7 @@ export function AdminLogin() {
 
   return (
     <section className={`${CONTENEDOR} max-w-md! pt-16`}>
-      <title>Acceso del autor · Nuestro Camino</title>
+      <title>Acceso del autor · En Caminos</title>
       <p className="text-[13px] font-semibold uppercase tracking-[.12em] text-bosque">Modo editor</p>
       <h1 className="mt-3 mb-8 font-serif text-[44px] leading-tight font-medium">Acceso del autor</h1>
       <form

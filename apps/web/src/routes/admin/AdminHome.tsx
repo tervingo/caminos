@@ -15,7 +15,7 @@ export function AdminHome() {
 
   return (
     <section className={`${CONTENEDOR} pt-10`}>
-      <title>Modo editor · Nuestro Camino</title>
+      <title>Modo editor · En Caminos</title>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className={TITULO_SECCION}>Tramos</h1>
         {!nuevo && (

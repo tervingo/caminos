@@ -53,7 +53,7 @@ export function aEtapa(e: FilaEtapa): Etapa {
     traza: e.traza,
     trazaOrigen: e.trazaOrigen,
     bbox: e.bbox,
-    sitios: e.sitios,
+    sitios: e.sitios.map((s) => ({ ...s, fotoId: s.fotoId ?? null })),
   };
 }
 
@@ -97,8 +97,10 @@ async function contenido(db: Db, tramoId: string) {
         lat: l.lat,
         lon: l.lon,
         precio: l.precio,
+        valoracion: l.valoracion,
         nota: l.nota,
         url: l.url,
+        fotoId: l.fotoId,
       }),
     ),
     filasFotos,

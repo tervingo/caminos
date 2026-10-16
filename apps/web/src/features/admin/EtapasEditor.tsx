@@ -5,6 +5,7 @@ import { editar, useCambio } from '../../lib/admin';
 import { desnivel, fechaCorta, numeroKm } from '../../lib/formato';
 import { type Limites, limitesTramo } from '../../lib/geo';
 import { LugaresEtapa } from './LugaresEditor';
+import { SelectorFoto } from './SelectorFoto';
 import { SelectorPunto } from './SelectorPunto';
 import { Boton, Campo, erroresDelApi, INPUT, MensajeError, numeroOpcional, TEXTAREA } from './ui';
 
@@ -84,7 +85,7 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
             </div>
             {abierta === e.id && (
               <>
-                <EtapaForm key={e.id} etapa={e} zona={zona} onCerrar={() => setAbierta(null)} />
+                <EtapaForm key={e.id} tramo={tramo} etapa={e} zona={zona} onCerrar={() => setAbierta(null)} />
                 {/* Fuera del formulario de la etapa: cada lugar se guarda por su cuenta */}
                 <div className="border-t border-linea bg-papel/60 p-4">
                   <h3 className="mt-0 mb-3 text-sm font-semibold">Dónde dormir y comer en esta etapa</h3>
@@ -165,7 +166,7 @@ function BloqueViaje({
         <span className="block font-semibold">{etapa.titulo}</span>
         <ResumenRuta etapa={etapa} />
       </button>
-      {abierta === etapa.id && <EtapaForm key={etapa.id} etapa={etapa} zona={null} onCerrar={() => onAbrir(null)} />}
+      {abierta === etapa.id && <EtapaForm key={etapa.id} tramo={tramo} etapa={etapa} zona={null} onCerrar={() => onAbrir(null)} />}
     </div>
   );
 }
@@ -193,7 +194,7 @@ interface ValoresEtapa {
   via: { punto: Punto | null }[];
   notas: string;
   km: string;
-  sitios: { nombre: string; punto: Punto | null; nota: string }[];
+  sitios: { nombre: string; punto: Punto | null; nota: string; fotoId: string | null }[];
 }
 
 const puntosIguales = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -206,10 +207,15 @@ const valoresDe = (etapa: Etapa): ValoresEtapa => ({
   via: etapa.via.map((punto) => ({ punto })),
   notas: etapa.notas ?? '',
   km: etapa.km === null ? '' : String(etapa.km),
-  sitios: etapa.sitios.map((s) => ({ nombre: s.nombre, punto: { nombre: s.localidad, lat: s.lat, lon: s.lon }, nota: s.nota ?? '' })),
+  sitios: etapa.sitios.map((s) => ({
+    nombre: s.nombre,
+    punto: { nombre: s.localidad, lat: s.lat, lon: s.lon },
+    nota: s.nota ?? '',
+    fotoId: s.fotoId,
+  })),
 });
 
-function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | null; onCerrar: () => void }) {
+function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa: Etapa; zona: Limites | null; onCerrar: () => void }) {
   const [perfil, setPerfil] = useState<PerfilRuta>('driving-car');
   // La ida y la vuelta van siempre en coche y no tienen sitios de interés
   const esViaje = etapa.tipo !== 'camino';
@@ -265,7 +271,7 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
         km: numeroOpcional(v.km),
         sitios: v.sitios.flatMap((s) =>
           s.punto && s.nombre.trim()
-            ? [{ nombre: s.nombre, localidad: s.punto.nombre, lat: s.punto.lat, lon: s.punto.lon, nota: s.nota }]
+            ? [{ nombre: s.nombre, localidad: s.punto.nombre, lat: s.punto.lat, lon: s.punto.lon, nota: s.nota, fotoId: s.fotoId }]
             : [],
         ),
         ...(cambianPuntos && { origen: v.origen, destino: v.destino, via }),
@@ -376,6 +382,17 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
               <Campo etiqueta="Nota" className="sm:col-span-2">
                 {(p) => <input {...p} {...register(`sitios.${i}.nota`)} placeholder="Opcional" className={INPUT} />}
               </Campo>
+              <Campo etiqueta="Foto" className="sm:col-span-2">
+                {() => (
+                  <Controller
+                    control={control}
+                    name={`sitios.${i}.fotoId`}
+                    render={({ field }) => (
+                      <SelectorFoto tramo={tramo} value={field.value} onChange={field.onChange} de={`el sitio ${i + 1}`} />
+                    )}
+                  />
+                )}
+              </Campo>
               <div>
                 <Boton variante="sutil" onClick={() => sitios.remove(i)}>
                   Quitar sitio
@@ -384,7 +401,7 @@ function EtapaForm({ etapa, zona, onCerrar }: { etapa: Etapa; zona: Limites | nu
             </div>
           ))}
           <div>
-            <Boton variante="sutil" onClick={() => sitios.append({ nombre: '', punto: null, nota: '' })}>
+            <Boton variante="sutil" onClick={() => sitios.append({ nombre: '', punto: null, nota: '', fotoId: null })}>
               + Añadir sitio de interés
             </Boton>
           </div>

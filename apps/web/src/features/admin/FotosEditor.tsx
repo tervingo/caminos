@@ -29,7 +29,9 @@ const EN_PARALELO = 2;
 export function FotosEditor({ tramo }: { tramo: TramoEditor }) {
   const [cola, setCola] = useState<EnCola[]>([]);
   const [arrastrando, setArrastrando] = useState(false);
-  const subir = useCambio((a: { archivo: File; avisar: (f: FaseSubida) => void }) => subirFoto(tramo.id, tramo.etapas, a.archivo, a.avisar));
+  const subir = useCambio(async (a: { archivo: File; avisar: (f: FaseSubida) => void }) =>
+    (await subirFoto(tramo.id, tramo.etapas, a.archivo, a.avisar)).tramo,
+  );
 
   const actualizar = (clave: string, cambio: Partial<EnCola>) =>
     setCola((c) => c.map((x) => (x.clave === clave ? { ...x, ...cambio } : x)));

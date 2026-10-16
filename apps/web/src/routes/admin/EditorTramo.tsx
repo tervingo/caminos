@@ -46,7 +46,7 @@ function Editor({ tramo }: { tramo: TramoEditor }) {
 
   return (
     <div className={`${CONTENEDOR} pt-8`}>
-      <title>{`Editar ${tramo.anio} · ${tramo.titulo} · Nuestro Camino`}</title>
+      <title>{`Editar ${tramo.anio} · ${tramo.titulo} · En Caminos`}</title>
       <Link to="/admin" className="text-sm font-semibold text-bosque">
         ← Todos los tramos
       </Link>

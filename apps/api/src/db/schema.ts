@@ -113,14 +113,19 @@ export const lugares = pgTable(
     lat: doublePrecision('lat').notNull(),
     lon: doublePrecision('lon').notNull(),
     precio: smallint('precio'),
+    /** Valoración de 1 a 5 estrellas */
+    valoracion: smallint('valoracion'),
     nota: text('nota'),
     url: text('url'),
+    /** Foto del tramo que ilustra el lugar */
+    fotoId: uuid('foto_id').references((): AnyPgColumn => fotos.id, { onDelete: 'set null' }),
   },
   (t) => [
     index('lugares_tramo_id_idx').on(t.tramoId),
     check('lugares_lat_check', sql`${t.lat} between -90 and 90`),
     check('lugares_lon_check', sql`${t.lon} between -180 and 180`),
     check('lugares_precio_check', sql`${t.precio} between 1 and 3`),
+    check('lugares_valoracion_check', sql`${t.valoracion} between 1 and 5`),
   ],
 );
 

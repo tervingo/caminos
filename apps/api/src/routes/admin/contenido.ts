@@ -10,7 +10,7 @@ import {
 } from '@caminos/shared';
 import { lugares, notas } from '../../db/schema.js';
 import { idValido, noEncontrado, validar } from '../../errores.js';
-import { cargarTramo, comprobarEtapa, type OpcionesAdmin, recalcularTramo, tramoEditor } from './comun.js';
+import { cargarTramo, comprobarEtapa, comprobarFotos, type OpcionesAdmin, recalcularTramo, tramoEditor } from './comun.js';
 
 type Params = { Params: { id: string } };
 
@@ -27,13 +27,16 @@ export const contenidoAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { d
     const { tramo } = await cargarTramo(db, req.params.id);
     const datos = validar(lugarEntradaSchema, req.body);
     await comprobarEtapa(db, tramo.id, datos.etapaId);
+    await comprobarFotos(db, tramo.id, [datos.fotoId]);
     await db.insert(lugares).values({
       ...datos,
       tramoId: tramo.id,
       localidad: datos.localidad ?? null,
       precio: datos.precio ?? null,
+      valoracion: datos.valoracion ?? null,
       nota: datos.nota ?? null,
       url: datos.url ?? null,
+      fotoId: datos.fotoId ?? null,
     });
     await recalcularTramo(db, tramo.id);
     reply.code(201);
@@ -44,6 +47,7 @@ export const contenidoAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { d
     const lugar = await cargarLugar(req.params.id);
     const datos = validar(lugarCambiosSchema, req.body);
     await comprobarEtapa(db, lugar.tramoId, datos.etapaId);
+    await comprobarFotos(db, lugar.tramoId, [datos.fotoId]);
     await db.update(lugares).set(datos).where(eq(lugares.id, lugar.id));
     await recalcularTramo(db, lugar.tramoId);
     return tramoEditor(db, assetsUrl, lugar.tramoId);

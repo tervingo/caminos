@@ -31,7 +31,7 @@ export function Home() {
 
   return (
     <>
-      <title>Caminos</title>
+      <title>En Caminos</title>
       <section id="inicio" className={`${CONTENEDOR} flex flex-wrap items-end gap-12 pt-12 pb-10 sm:pt-16`}>
         <div className="min-w-0 flex-[1.4_1_460px]">
           <div className="text-[13px] font-semibold uppercase tracking-[.12em] text-bosque">

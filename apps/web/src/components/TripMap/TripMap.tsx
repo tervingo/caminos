@@ -22,6 +22,7 @@ import {
   ZOOM_DETALLE,
   ZOOM_FOCO,
 } from '../../lib/geo';
+import { Estrellas } from '../ui';
 import { ACENTO, CAPAS, type Capa, COLOR_CAPA, icono } from './iconos';
 import { ATRIBUCION, TESELAS } from './teselas';
 import type { Foco, TripMapProps } from './tipos';
@@ -325,7 +326,9 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
               })}
             >
               <Popup>
-                <Ficha rotulo={`Sitio de interés · Etapa ${i + 1}`} titulo={s.nombre} subtitulo={s.localidad ?? undefined} texto={s.nota} />
+                <Ficha rotulo={`Sitio de interés · Etapa ${i + 1}`} titulo={s.nombre} subtitulo={s.localidad ?? undefined} texto={s.nota}>
+                  <FotoFicha tramo={tramo} id={s.fotoId} />
+                </Ficha>
               </Popup>
             </Marker>
           )),
@@ -357,7 +360,10 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
                   titulo={l.nombre}
                   subtitulo={[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}
                   texto={l.nota}
-                />
+                >
+                  {l.valoracion && <Estrellas valor={l.valoracion} />}
+                  <FotoFicha tramo={tramo} id={l.fotoId} />
+                </Ficha>
               </Popup>
             </Marker>
           );
@@ -515,6 +521,13 @@ function RecuadroTramo({ mapa, zoom, limites, onClick }: { mapa: L.Map; zoom: nu
       eventHandlers={{ click: onClick }}
     />
   );
+}
+
+/** Miniatura de la foto de un lugar o sitio dentro de su ventana del mapa */
+function FotoFicha({ tramo, id }: { tramo: TramoDetalle; id: string | null }) {
+  const foto = id ? tramo.fotos.find((f) => f.id === id) : undefined;
+  if (!foto) return null;
+  return <img src={foto.urlMini} alt={foto.pie ?? ''} className="mt-2 block h-auto w-60 max-w-full rounded-lg" />;
 }
 
 function Ficha({

@@ -101,6 +101,8 @@ export const sitioSchema = z.object({
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
   nota: z.string().nullable(),
+  /** Foto del tramo que ilustra el sitio (los sitios guardados antes no la tienen) */
+  fotoId: z.string().uuid().nullable().default(null),
 });
 export type Sitio = z.infer<typeof sitioSchema>;
 
@@ -133,8 +135,12 @@ export const lugarSchema = z.object({
   lat: z.number(),
   lon: z.number(),
   precio: z.number().int().min(1).max(3).nullable(),
+  /** De 1 a 5 estrellas */
+  valoracion: z.number().int().min(1).max(5).nullable(),
   nota: z.string().nullable(),
   url: z.string().nullable(),
+  /** Foto del tramo que ilustra el lugar */
+  fotoId: z.string().uuid().nullable(),
 });
 export type Lugar = z.infer<typeof lugarSchema>;
 
@@ -235,6 +241,7 @@ export const sitioEntradaSchema = z.object({
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
   nota: textoOpcional(1000).transform((v) => v ?? null),
+  fotoId: uuidOpcional.transform((v) => v ?? null),
 });
 export type SitioEntrada = z.input<typeof sitioEntradaSchema>;
 
@@ -268,6 +275,7 @@ export const lugarEntradaSchema = z.object({
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
   precio: z.number().int().min(1).max(3).nullable().optional(),
+  valoracion: z.number().int().min(1).max(5).nullable().optional(),
   nota: textoOpcional(2000),
   url: z
     .union([z.string().trim().url().max(500), z.literal('')])
@@ -276,6 +284,7 @@ export const lugarEntradaSchema = z.object({
     .optional(),
   /** Etapa a la que pertenece (obligatoria) */
   etapaId: z.string().uuid(),
+  fotoId: uuidOpcional,
 });
 export type LugarEntrada = z.input<typeof lugarEntradaSchema>;
 

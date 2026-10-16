@@ -23,6 +23,16 @@ export function PuntoCamino({ color }: { color: string }) {
   return <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={{ background: color }} />;
 }
 
+/** Valoración de 1 a 5: ★★★★☆ */
+export function Estrellas({ valor }: { valor: number }) {
+  return (
+    <span role="img" aria-label={`Valoración: ${valor} de 5`} className="tracking-[.05em] text-ambar">
+      {'★'.repeat(valor)}
+      <span className="text-linea">{'★'.repeat(5 - valor)}</span>
+    </span>
+  );
+}
+
 export function Aviso({ children }: { children: ReactNode }) {
   return <p className="m-0 rounded-[14px] border border-linea bg-white px-5 py-4 text-musgo">{children}</p>;
 }

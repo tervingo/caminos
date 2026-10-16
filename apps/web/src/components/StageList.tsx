@@ -1,8 +1,10 @@
-import type { Etapa } from '@caminos/shared';
+import type { Etapa, Foto } from '@caminos/shared';
 import { fechaCorta, numeroKm } from '../lib/formato';
 
 interface Props {
   etapas: Etapa[];
+  /** Para la foto de cada sitio de interés */
+  fotos?: Foto[];
   /** Viajes en coche, fuera de la numeración */
   ida?: Etapa | null;
   vuelta?: Etapa | null;
@@ -11,7 +13,7 @@ interface Props {
   onElegir: (indice: number | null) => void;
 }
 
-export function StageList({ etapas, ida, vuelta, elegida, onElegir }: Props) {
+export function StageList({ etapas, fotos = [], ida, vuelta, elegida, onElegir }: Props) {
   if (etapas.length === 0 && !ida && !vuelta) return <p className="m-0 text-musgo">Este tramo todavía no tiene etapas.</p>;
 
   return (
@@ -41,13 +43,21 @@ export function StageList({ etapas, ida, vuelta, elegida, onElegir }: Props) {
                   {e.sitios.length > 0 && (
                     <span className="mt-2.5 block border-t border-linea-suave pt-2">
                       <span className="block text-xs font-semibold uppercase tracking-[.08em] text-ambar-oscuro">★ Sitios de interés</span>
-                      {e.sitios.map((s, j) => (
-                        <span key={j} className="mt-1 block text-sm">
-                          <span className="font-semibold">{s.nombre}</span>
-                          {s.localidad && <span className="text-gris"> · {s.localidad}</span>}
-                          {s.nota && <span className="block text-[13px] text-musgo">{s.nota}</span>}
-                        </span>
-                      ))}
+                      {e.sitios.map((s, j) => {
+                        const foto = s.fotoId ? fotos.find((f) => f.id === s.fotoId) : undefined;
+                        return (
+                          <span key={j} className="mt-1.5 flex gap-2.5 text-sm">
+                            {foto && (
+                              <img src={foto.urlMini} alt={foto.pie ?? s.nombre} loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />
+                            )}
+                            <span className="min-w-0">
+                              <span className="font-semibold">{s.nombre}</span>
+                              {s.localidad && <span className="text-gris"> · {s.localidad}</span>}
+                              {s.nota && <span className="block text-[13px] text-musgo">{s.nota}</span>}
+                            </span>
+                          </span>
+                        );
+                      })}
                     </span>
                   )}
                 </span>

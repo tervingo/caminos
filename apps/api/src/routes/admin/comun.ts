@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { TramoEditor } from '@caminos/shared';
 import type { Db } from '../../db/index.js';
 import { caminos, etapas, fotos, lugares, tramos } from '../../db/schema.js';
@@ -45,6 +45,17 @@ export async function comprobarEtapa(db: Ejecutor, tramoId: string, etapaId: str
     .from(etapas)
     .where(and(eq(etapas.id, etapaId), eq(etapas.tramoId, tramoId)));
   if (!etapa) throw new HttpError(400, 'etapa-ajena', 'Esa etapa no es de este tramo');
+}
+
+/** Las fotos de un lugar o un sitio de interés deben ser del mismo tramo */
+export async function comprobarFotos(db: Ejecutor, tramoId: string, ids: (string | null | undefined)[]) {
+  const pedidas = [...new Set(ids.filter((id): id is string => !!id))];
+  if (pedidas.length === 0) return;
+  const propias = await db
+    .select({ id: fotos.id })
+    .from(fotos)
+    .where(and(eq(fotos.tramoId, tramoId), inArray(fotos.id, pedidas)));
+  if (propias.length !== pedidas.length) throw new HttpError(400, 'foto-ajena', 'Esa foto no es de este tramo');
 }
 
 /**

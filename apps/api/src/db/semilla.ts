@@ -93,7 +93,7 @@ export async function sembrar(db: Db): Promise<void> {
           .filter((l) => l.tipo === 'ver' && etapaDe(l.localidad) === e.id)
           .map((l) => {
             const [lat, lon] = localidades[l.localidad];
-            return { nombre: l.nombre, localidad: l.localidad, lat, lon, nota: l.nota };
+            return { nombre: l.nombre, localidad: l.localidad, lat, lon, nota: l.nota, fotoId: null };
           });
         if (sitios.length > 0) await tx.update(etapas).set({ sitios }).where(eq(etapas.id, e.id));
       }

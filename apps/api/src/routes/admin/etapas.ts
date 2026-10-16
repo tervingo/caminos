@@ -11,7 +11,7 @@ import {
 import { etapas } from '../../db/schema.js';
 import { HttpError, idValido, noEncontrado, validar } from '../../errores.js';
 import { bboxDe, simplificar } from '../../geo.js';
-import { cargarTramo, type OpcionesAdmin, recalcularTramo, tramoEditor, type Tx } from './comun.js';
+import { cargarTramo, comprobarFotos, type OpcionesAdmin, recalcularTramo, tramoEditor, type Tx } from './comun.js';
 
 type Params = { Params: { id: string } };
 
@@ -59,6 +59,7 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
       if (ya) throw new HttpError(409, 'viaje-repetido', `Este tramo ya tiene ${tipo === 'ida' ? 'ida' : 'vuelta'}`);
       posicion = POSICION_VIAJE[tipo];
     }
+    await comprobarFotos(db, tramo.id, (datos.sitios ?? []).map((s) => s.fotoId));
     await db.insert(etapas).values({
       tramoId: tramo.id,
       tipo,
@@ -82,6 +83,7 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
     const etapa = await cargarEtapa(req.params.id);
     const datos = validar(etapaCambiosSchema, req.body);
     const { origen, destino, via, ...resto } = datos;
+    await comprobarFotos(db, etapa.tramoId, (datos.sitios ?? []).map((s) => s.fotoId));
     // Si cambian los puntos, la ruta por carretera deja de valer hasta recalcularla
     const cambianPuntos = origen !== undefined || destino !== undefined || via !== undefined;
     const invalidarRuta = cambianPuntos && etapa.trazaOrigen !== 'gpx';

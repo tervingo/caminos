@@ -1,6 +1,6 @@
-import type { Etapa, Lugar, TipoLugar } from '@caminos/shared';
+import type { Etapa, Foto, Lugar, TipoLugar } from '@caminos/shared';
 import { precio } from '../lib/formato';
-import { ROTULO } from './ui';
+import { Estrellas, ROTULO } from './ui';
 
 const TIPOS: { tipo: TipoLugar; titulo: string; borde: string; texto: string }[] = [
   { tipo: 'dormir', titulo: 'Dormir', borde: '#234E8F', texto: '#234E8F' },
@@ -10,10 +10,12 @@ const TIPOS: { tipo: TipoLugar; titulo: string; borde: string; texto: string }[]
 interface Props {
   lugares: Lugar[];
   etapas: Etapa[];
+  fotos: Foto[];
   onVerEnMapa: (id: string) => void;
 }
 
-export function PlaceCards({ lugares, etapas, onVerEnMapa }: Props) {
+export function PlaceCards({ lugares, etapas, fotos, onVerEnMapa }: Props) {
+  const fotoDe = (l: Lugar) => (l.fotoId ? fotos.find((f) => f.id === l.fotoId) : undefined);
   // Cada sitio indica su etapa y se listan en el orden del camino
   const posicion = new Map(etapas.map((e, i) => [e.id, i]));
   const ordenEtapa = (l: Lugar) => posicion.get(l.etapaId) ?? 99;
@@ -35,33 +37,44 @@ export function PlaceCards({ lugares, etapas, onVerEnMapa }: Props) {
             </h3>
             {deTipo.length === 0 && <p className="m-0 border-t border-linea-suave py-3 text-sm text-gris">Nada anotado.</p>}
             {deTipo.map((l) => (
-              <div key={l.id} className="border-t border-linea-suave py-3">
-                {posicion.has(l.etapaId) && (
-                  <div className="text-xs font-semibold text-bosque">
-                    Etapa {posicion.get(l.etapaId)! + 1} · {etapas[posicion.get(l.etapaId)!].titulo}
-                  </div>
-                )}
-                <div className="font-semibold">{l.nombre}</div>
-                {(l.localidad || l.precio) && (
-                  <div className="text-sm text-gris">{[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</div>
-                )}
-                {l.nota && <div className="mt-1 text-sm text-musgo">{l.nota}</div>}
-                <div className="mt-1.5 flex flex-wrap gap-x-4 text-sm font-semibold text-bosque">
-                  <a
-                    href="#mapa"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onVerEnMapa(l.id);
-                    }}
-                  >
-                    Ver en el mapa →
-                  </a>
-                  {l.url && (
-                    <a href={l.url} target="_blank" rel="noopener noreferrer">
-                      Web del sitio ↗
-                    </a>
+              <div key={l.id} className="flex gap-3 border-t border-linea-suave py-3">
+                <div className="min-w-0 flex-1">
+                  {posicion.has(l.etapaId) && (
+                    <div className="text-xs font-semibold text-bosque">
+                      Etapa {posicion.get(l.etapaId)! + 1} · {etapas[posicion.get(l.etapaId)!].titulo}
+                    </div>
                   )}
+                  <div className="font-semibold">{l.nombre}</div>
+                  {l.valoracion && <Estrellas valor={l.valoracion} />}
+                  {(l.localidad || l.precio) && (
+                    <div className="text-sm text-gris">{[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</div>
+                  )}
+                  {l.nota && <div className="mt-1 text-sm text-musgo">{l.nota}</div>}
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 text-sm font-semibold text-bosque">
+                    <a
+                      href="#mapa"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onVerEnMapa(l.id);
+                      }}
+                    >
+                      Ver en el mapa →
+                    </a>
+                    {l.url && (
+                      <a href={l.url} target="_blank" rel="noopener noreferrer">
+                        Web del sitio ↗
+                      </a>
+                    )}
+                  </div>
                 </div>
+                {fotoDe(l) && (
+                  <img
+                    src={fotoDe(l)!.urlMini}
+                    alt={fotoDe(l)!.pie ?? l.nombre}
+                    loading="lazy"
+                    className="size-20 shrink-0 rounded-lg bg-linea-suave object-cover"
+                  />
+                )}
               </div>
             ))}
           </div>

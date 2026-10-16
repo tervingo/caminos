@@ -176,8 +176,8 @@ describe.skipIf(!url)('editor (API de autor)', () => {
         ],
       });
       expect(tramo.etapas[0].sitios).toEqual([
-        { nombre: 'Monte Jaizkibel', localidad: 'Hondarribia', lat: 43.5, lon: -1.85, nota: null },
-        { nombre: 'Santuario de Guadalupe', localidad: null, lat: 43.35, lon: -1.82, nota: null },
+        { nombre: 'Monte Jaizkibel', localidad: 'Hondarribia', lat: 43.5, lon: -1.85, nota: null, fotoId: null },
+        { nombre: 'Santuario de Guadalupe', localidad: null, lat: 43.35, lon: -1.82, nota: null, fotoId: null },
       ]);
       expect(tramo.etapas[0].traza).not.toBeNull();
       expect(tramo.bbox![3]).toBe(43.5);
@@ -288,6 +288,32 @@ describe.skipIf(!url)('editor (API de autor)', () => {
       expect(tramo.fotos[0].lat).toBe(43.33);
       const publico = tramoDetalleSchema.parse((await app.inject({ url: '/api/tramos/2027-del-norte', cookies: { sesion: cookie } })).json());
       expect(publico.fotos[0]).toMatchObject({ lat: null, lon: null });
+    });
+
+    it('lugares y sitios de interés con valoración y foto del tramo; al borrar la foto la sueltan', async () => {
+      // Una foto nueva solo para este test (la otra la usa el borrado del tramo)
+      const firma = (await pedir('POST', `/api/admin/tramos/${tramo.id}/fotos/firmar`)).json();
+      objetos.set(`fotos/${tramo.id}/${firma.id}-grande.webp`, { tamano: 300_000, contentType: 'image/webp' });
+      objetos.set(`fotos/${tramo.id}/${firma.id}-mini.webp`, { tamano: 30_000, contentType: 'image/webp' });
+      tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/fotos`, { id: firma.id, ancho: 800, alto: 600 });
+
+      const etapaId = tramo.etapas[0].id;
+      const lugar = { tipo: 'comer', nombre: 'Sidrería', lat: 43.32, lon: -1.92, etapaId };
+      expect((await pedir('POST', `/api/admin/tramos/${tramo.id}/lugares`, { ...lugar, valoracion: 6 })).statusCode).toBe(400);
+      const ajena = await pedir('POST', `/api/admin/tramos/${tramo.id}/lugares`, { ...lugar, fotoId: '00000000-0000-4000-8000-000000000000' });
+      expect(ajena.json().error.code).toBe('foto-ajena');
+
+      tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/lugares`, { ...lugar, valoracion: 4, fotoId: firma.id });
+      expect(tramo.lugares.find((l) => l.nombre === 'Sidrería')).toMatchObject({ valoracion: 4, fotoId: firma.id });
+      const sitios = tramo.etapas[0].sitios.map((s) => ({ ...s, fotoId: s.fotoId }));
+      tramo = await editor('PATCH', `/api/admin/etapas/${etapaId}`, { sitios: [{ ...sitios[0], fotoId: firma.id }, ...sitios.slice(1)] });
+      expect(tramo.etapas[0].sitios[0].fotoId).toBe(firma.id);
+      expect(tramo.etapas[0].sitios[1].fotoId).toBeNull();
+
+      tramo = await editor('DELETE', `/api/admin/fotos/${firma.id}`);
+      expect(tramo.lugares.find((l) => l.nombre === 'Sidrería')?.fotoId).toBeNull();
+      expect(tramo.etapas[0].sitios[0].fotoId).toBeNull();
+      tramo = await editor('DELETE', `/api/admin/lugares/${tramo.lugares.find((l) => l.nombre === 'Sidrería')!.id}`);
     });
 
     it('publica y despublica', async () => {

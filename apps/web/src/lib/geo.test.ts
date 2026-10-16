@@ -78,7 +78,7 @@ describe('etapas', () => {
     const e = etapa({
       origen: { nombre: 'A', lat: 43.0, lon: -4.0 },
       destino: { nombre: 'B', lat: 43.1, lon: -4.1 },
-      sitios: [{ nombre: 'Cueva', localidad: null, lat: 43.3, lon: -4.3, nota: null }],
+      sitios: [{ nombre: 'Cueva', localidad: null, lat: 43.3, lon: -4.3, nota: null, fotoId: null }],
     });
     expect(limitesEtapa(e)).toEqual([
       [43.0, -4.3],

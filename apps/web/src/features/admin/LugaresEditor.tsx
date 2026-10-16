@@ -4,6 +4,8 @@ import type { Etapa, Lugar, Punto, TipoLugar, TramoEditor } from '@caminos/share
 import { editar, useCambio } from '../../lib/admin';
 import { precio } from '../../lib/formato';
 import { limitesEtapa, limitesTramo } from '../../lib/geo';
+import { Estrellas } from '../../components/ui';
+import { SelectorFoto } from './SelectorFoto';
 import { SelectorPunto } from './SelectorPunto';
 import { Boton, Campo, erroresDelApi, INPUT, MensajeError, TEXTAREA } from './ui';
 
@@ -36,6 +38,11 @@ export function LugaresEtapa({ tramo, etapa }: { tramo: TramoEditor; etapa: Etap
                   <span className="min-w-0 flex-1">
                     <span className="font-semibold">{l.nombre}</span>
                     <span className="text-sm text-gris"> {[l.localidad, precio(l.precio)].filter(Boolean).join(' · ')}</span>
+                    {l.valoracion && (
+                      <span className="ml-2 text-sm">
+                        <Estrellas valor={l.valoracion} />
+                      </span>
+                    )}
                   </span>
                   <Boton variante="sutil" aria-expanded={editando === l.id} onClick={() => setEditando(editando === l.id ? null : l.id)}>
                     Editar
@@ -66,8 +73,10 @@ interface ValoresLugar {
   localidad: string;
   punto: Punto | null;
   precio: string;
+  valoracion: string;
   nota: string;
   url: string;
+  fotoId: string | null;
 }
 
 interface PropsForm {
@@ -98,16 +107,18 @@ function LugarForm({ tramo, etapa, lugar, onCerrar }: PropsForm) {
       localidad: lugar?.localidad ?? '',
       punto: lugar ? { nombre: lugar.localidad, lat: lugar.lat, lon: lugar.lon } : null,
       precio: lugar?.precio ? String(lugar.precio) : '',
+      valoracion: lugar?.valoracion ? String(lugar.valoracion) : '',
+      fotoId: lugar?.fotoId ?? null,
       nota: lugar?.nota ?? '',
       url: lugar?.url ?? '',
     },
   });
   const zona = limitesEtapa(etapa) ?? limitesTramo(tramo);
 
-  const enviar = handleSubmit(({ punto, precio: p, ...v }) => {
+  const enviar = handleSubmit(({ punto, precio: p, valoracion: val, ...v }) => {
     if (!punto) return setError('punto', { message: 'Busca la localidad o elige el punto en el mapa' });
     guardar.mutate(
-      { ...v, lat: punto.lat, lon: punto.lon, precio: p ? Number(p) : null, etapaId: etapa.id },
+      { ...v, lat: punto.lat, lon: punto.lon, precio: p ? Number(p) : null, valoracion: val ? Number(val) : null, etapaId: etapa.id },
       { onSuccess: onCerrar, onError: (err) => erroresDelApi(err, setError) },
     );
   });
@@ -159,6 +170,28 @@ function LugarForm({ tramo, etapa, lugar, onCerrar }: PropsForm) {
             <option value="2">€€</option>
             <option value="3">€€€</option>
           </select>
+        )}
+      </Campo>
+      <Campo etiqueta="Valoración">
+        {(p) => (
+          <select {...p} {...register('valoracion')} className={INPUT}>
+            <option value="">Sin valorar</option>
+            {[5, 4, 3, 2, 1].map((n) => (
+              <option key={n} value={n}>
+                {'★'.repeat(n)}
+                {'☆'.repeat(5 - n)} ({n})
+              </option>
+            ))}
+          </select>
+        )}
+      </Campo>
+      <Campo etiqueta="Foto" className="sm:col-span-2">
+        {() => (
+          <Controller
+            control={control}
+            name="fotoId"
+            render={({ field }) => <SelectorFoto tramo={tramo} value={field.value} onChange={field.onChange} de="este lugar" />}
+          />
         )}
       </Campo>
       <Campo etiqueta="Web" error={errors.url && 'Dirección no válida (empieza por https://)'}>

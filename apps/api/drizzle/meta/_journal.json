@@ -29,6 +29,13 @@
       "when": 1792089626724,
       "tag": "0003_ida-y-vuelta",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792142988362,
+      "tag": "0004_valoracion-y-foto",
+      "breakpoints": true
     }
   ]
 }

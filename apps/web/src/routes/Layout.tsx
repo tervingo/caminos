@@ -21,7 +21,7 @@ export function Layout() {
         <div className={`${CONTENEDOR} flex flex-wrap items-center justify-between gap-4 py-[18px]`}>
           <Link to="/" className="flex items-center gap-2.5">
             <Logo />
-            <span className="font-serif text-2xl font-semibold">Nuestro Camino</span>
+            <span className="font-serif text-2xl font-semibold">En Caminos</span>
           </Link>
           <nav aria-label="Principal" className="flex flex-wrap gap-x-7 gap-y-2 text-[15px] font-medium">
             <Link to="/#anos">Los años</Link>
@@ -50,7 +50,7 @@ export function Layout() {
 
       <footer className="mt-20 border-t border-linea">
         <div className={`${CONTENEDOR} py-6 text-[13px] text-gris`}>
-          Nuestro Camino · un tramo del Camino de Santiago cada año, contado por el grupo.{' '}
+          En Caminos · un tramo del Camino de Santiago cada año, contado por el grupo.{' '}
           <Link to="/admin" className="text-gris underline-offset-2">
             Acceso del autor
           </Link>

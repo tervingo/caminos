@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { eq, max } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { type FirmaFoto, fotoCambiosSchema, fotoEntradaSchema, type TramoEditor, type VarianteFoto } from '@caminos/shared';
-import { fotos, tramos } from '../../db/schema.js';
+import { etapas, fotos, tramos } from '../../db/schema.js';
 import { HttpError, idValido, noEncontrado, validar } from '../../errores.js';
 import type { R2 } from '../../r2.js';
 import { cargarTramo, comprobarEtapa, type OpcionesAdmin, recalcularTramo, tramoEditor } from './comun.js';
@@ -92,6 +92,12 @@ export const fotosAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, a
   app.delete<Params>('/api/admin/fotos/:id', async (req): Promise<TramoEditor> => {
     const foto = await cargarFoto(req.params.id);
     await db.delete(fotos).where(eq(fotos.id, foto.id));
+    // Los lugares la sueltan solos (clave ajena); los sitios de interés van en JSON
+    const conEsaFoto = await db.select({ id: etapas.id, sitios: etapas.sitios }).from(etapas).where(eq(etapas.tramoId, foto.tramoId));
+    for (const e of conEsaFoto.filter((x) => x.sitios.some((s) => s.fotoId === foto.id))) {
+      const sitios = e.sitios.map((s) => (s.fotoId === foto.id ? { ...s, fotoId: null } : s));
+      await db.update(etapas).set({ sitios }).where(eq(etapas.id, e.id));
+    }
     await r2?.borrar([foto.keyGrande, foto.keyMini]).catch((err) => req.log.error(err, 'No se pudo borrar la foto de R2'));
     await recalcularTramo(db, foto.tramoId);
     return tramoEditor(db, assetsUrl, foto.tramoId);
