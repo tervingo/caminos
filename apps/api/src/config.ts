@@ -13,7 +13,7 @@ const envSchema = z
     PORT: z.preprocess(vacioComoAusente, z.coerce.number().int().positive().default(3000)),
     HOST: conDefecto('0.0.0.0'),
     /** Orígenes desde los que se aceptan escrituras (separados por comas) */
-    ALLOWED_ORIGIN: conDefecto('http://localhost:5173,https://santiagos.netlify.app'),
+    ALLOWED_ORIGIN: conDefecto('http://localhost:5173,https://encaminos.netlify.app'),
     DATABASE_URL: opcional,
     JWT_SECRET: opcional,
     PUBLIC_ASSETS_URL: conDefecto('https://caminos-fotos.j4alonso.workers.dev', z.string().url()),
