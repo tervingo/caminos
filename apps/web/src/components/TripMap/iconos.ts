@@ -1,10 +1,11 @@
 // Marcadores divIcon con el aspecto del mock-up D.
 import L from 'leaflet';
 
-export type Capa = 'etapas' | 'sitios' | 'dormir' | 'comer' | 'fotos' | 'otros';
+export type Capa = 'etapas' | 'carretera' | 'sitios' | 'dormir' | 'comer' | 'fotos' | 'otros';
 
 export const CAPAS: { id: Capa; label: string; color: string }[] = [
   { id: 'etapas', label: 'Etapas', color: '#1E4D3A' },
+  { id: 'carretera', label: 'Por carretera', color: '#8A8F87' },
   { id: 'sitios', label: 'Sitios de interés', color: '#E2AE2D' },
   { id: 'dormir', label: 'Dormir', color: '#7AA7FF' },
   { id: 'comer', label: 'Comer', color: '#6FD08C' },

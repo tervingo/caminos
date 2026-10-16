@@ -53,8 +53,9 @@ export function limitesTramo(tramo: TramoDetalle): Limites | null {
   return limitesDePuntos(puntos);
 }
 
-/** Puntos que delimitan una etapa: su traza o, si no la tiene, origen, paradas y destino */
+/** Puntos de la línea principal de una etapa: el recorrido a pie, la ruta o, si no, origen, paradas y destino */
 export function puntosEtapa(etapa: Etapa): LatLon[] {
+  if (etapa.trazaPie && etapa.trazaPie.coordinates.length > 0) return aLatLon(etapa.trazaPie);
   if (etapa.traza && etapa.traza.coordinates.length > 0) return aLatLon(etapa.traza);
   return [etapa.origen, ...etapa.via, etapa.destino].flatMap((p): LatLon[] => (p ? [[p.lat, p.lon]] : []));
 }
@@ -63,7 +64,8 @@ const puntosSitios = (etapa: Etapa): LatLon[] => etapa.sitios.map((s): LatLon =>
 
 /** Recuadro de la etapa: su ruta y sus sitios de interés */
 export function limitesEtapa(etapa: Etapa): Limites | null {
-  const ruta = etapa.bbox ? limitesDeBbox(etapa.bbox) : puntosEtapa(etapa);
+  // El bbox guardado es el de la ruta por carretera: con recorrido a pie se usa este
+  const ruta = etapa.bbox && !etapa.trazaPie ? limitesDeBbox(etapa.bbox) : puntosEtapa(etapa);
   return limitesDePuntos([...ruta, ...puntosSitios(etapa)]);
 }
 

@@ -83,6 +83,10 @@ export const etapas = pgTable(
       .default('carretera'),
     bbox: jsonb('bbox').$type<BBox>(),
     gpxKey: text('gpx_key'),
+    /** Recorrido a pie del Camino (recortado de un GPX), aparte de la ruta por carretera */
+    trazaPie: jsonb('traza_pie').$type<LineString>(),
+    kmPie: numeric('km_pie', { precision: 6, scale: 2, mode: 'number' }),
+    trazaPieFuente: text('traza_pie_fuente'),
     /** Sitios de interés de la etapa (no tienen por qué estar en la ruta) */
     sitios: jsonb('sitios').$type<Sitio[]>().notNull().default([]),
   },

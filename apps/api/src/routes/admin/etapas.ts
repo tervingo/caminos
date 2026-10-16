@@ -5,6 +5,7 @@ import {
   etapaCambiosSchema,
   etapaEntradaSchema,
   ordenEtapasSchema,
+  recorridoPieSchema,
   type Punto,
   type TramoEditor,
 } from '@caminos/shared';
@@ -128,6 +129,33 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
     const mismas = ids.length === actuales.length && new Set(ids).size === ids.length && actuales.every((e) => ids.includes(e.id));
     if (!mismas) throw new HttpError(400, 'orden-incompleto', 'El orden debe incluir todas las etapas del tramo, una vez cada una');
     await db.transaction((tx) => numerar(tx, ids));
+    return tramoEditor(db, assetsUrl, tramo.id);
+  });
+
+  // Recorridos a pie recortados en el navegador de los GPX subidos (p. ej. del CNIG)
+  app.put<Params>('/api/admin/tramos/:id/recorrido-pie', { bodyLimit: 5 * 1024 * 1024 }, async (req): Promise<TramoEditor> => {
+    const { tramo } = await cargarTramo(db, req.params.id);
+    const { fuente, etapas: cambios } = validar(recorridoPieSchema, req.body);
+    const propias = await db
+      .select({ id: etapas.id })
+      .from(etapas)
+      .where(and(eq(etapas.tramoId, tramo.id), eq(etapas.tipo, 'camino')));
+    const ids = new Set(propias.map((e) => e.id));
+    if (!cambios.every((c) => ids.has(c.id))) throw new HttpError(400, 'etapa-ajena', 'Alguna etapa no es del Camino de este tramo');
+
+    await db.transaction(async (tx) => {
+      for (const c of cambios) {
+        await tx
+          .update(etapas)
+          .set({
+            trazaPie: c.traza ? { type: 'LineString', coordinates: c.traza.coordinates } : null,
+            kmPie: c.traza ? c.km : null,
+            trazaPieFuente: c.traza ? fuente : null,
+          })
+          .where(eq(etapas.id, c.id));
+      }
+      await recalcularTramo(tx, tramo.id);
+    });
     return tramoEditor(db, assetsUrl, tramo.id);
   });
 

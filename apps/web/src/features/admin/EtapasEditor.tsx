@@ -5,6 +5,7 @@ import { editar, useCambio } from '../../lib/admin';
 import { desnivel, fechaCorta, numeroKm } from '../../lib/formato';
 import { type Limites, limitesTramo } from '../../lib/geo';
 import { LugaresEtapa } from './LugaresEditor';
+import { RecorridoPieEditor } from './RecorridoPieEditor';
 import { SelectorFoto } from './SelectorFoto';
 import { SelectorPunto } from './SelectorPunto';
 import { Boton, Campo, erroresDelApi, INPUT, MensajeError, numeroOpcional, TEXTAREA } from './ui';
@@ -106,6 +107,7 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
           + Nueva etapa
         </Boton>
       </div>
+      {tramo.etapas.length > 0 && <RecorridoPieEditor tramo={tramo} />}
       <BloqueViaje tramo={tramo} tipo="vuelta" abierta={abierta} onAbrir={setAbierta} />
     </div>
   );
@@ -174,7 +176,8 @@ function BloqueViaje({
 function ResumenRuta({ etapa }: { etapa: Etapa }) {
   const datos = [
     etapa.fecha && fechaCorta(etapa.fecha),
-    etapa.km !== null && `${numeroKm(etapa.km)} km`,
+    etapa.kmPie !== null && `${numeroKm(etapa.kmPie)} km a pie`,
+    etapa.km !== null && `${numeroKm(etapa.km)} km${etapa.kmPie !== null ? ' por carretera' : ''}`,
     etapa.desnivelPos !== null && desnivel(etapa.desnivelPos),
   ].filter(Boolean);
   const aviso = !etapa.origen || !etapa.destino ? 'Falta origen o destino' : !etapa.traza ? 'Recorrido sin calcular' : null;

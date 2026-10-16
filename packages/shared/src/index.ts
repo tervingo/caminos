@@ -119,9 +119,15 @@ export const etapaSchema = z.object({
   km: z.number().nullable(),
   desnivelPos: z.number().int().nullable(),
   desnivelNeg: z.number().int().nullable(),
+  /** Ruta por carretera (OpenRouteService) */
   traza: lineStringSchema.nullable(),
   trazaOrigen: trazaOrigenSchema,
   bbox: bboxSchema.nullable(),
+  /** Recorrido a pie del Camino, recortado de un GPX (p. ej. del CNIG) */
+  trazaPie: lineStringSchema.nullable(),
+  kmPie: z.number().nullable(),
+  /** Atribución del trazado a pie, p. ej. «© FEAACS / CNIG (CC BY 4.0)» */
+  trazaPieFuente: z.string().nullable(),
   sitios: z.array(sitioSchema),
 });
 export type Etapa = z.infer<typeof etapaSchema>;
@@ -263,6 +269,21 @@ export type EtapaEntrada = z.input<typeof etapaEntradaSchema>;
 
 export const etapaCambiosSchema = etapaEntradaSchema.omit({ tipo: true }).partial().strict();
 export type EtapaCambios = z.input<typeof etapaCambiosSchema>;
+
+/** Recorridos a pie de varias etapas a la vez (traza null: se quita) */
+export const recorridoPieSchema = z.object({
+  fuente: z.string().trim().max(200).nullable(),
+  etapas: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        traza: lineStringSchema.refine((l) => l.coordinates.length >= 2 && l.coordinates.length <= 20000).nullable(),
+        km: z.number().min(0).max(9999).nullable(),
+      }),
+    )
+    .min(1),
+});
+export type RecorridoPie = z.infer<typeof recorridoPieSchema>;
 
 export const ordenEtapasSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
 

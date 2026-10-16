@@ -36,6 +36,13 @@
       "when": 1792142988362,
       "tag": "0004_valoracion-y-foto",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792171490744,
+      "tag": "0005_recorrido-a-pie",
+      "breakpoints": true
     }
   ]
 }

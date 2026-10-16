@@ -70,4 +70,4 @@ npx -w @caminos/fotos wrangler login   # una vez
 npm run deploy -w @caminos/fotos
 ```
 
-La regla CORS del bucket (Settings → CORS Policy) permite `PUT` desde `http://localhost:5173` y `https://santiagos.netlify.app`.
+La regla CORS del bucket (Settings → CORS Policy) permite `PUT` desde `http://localhost:5173` y `https://encaminos.netlify.app`.

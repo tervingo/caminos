@@ -5,7 +5,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { AttributionControl, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet';
 import { useNavigate } from 'react-router';
 import type { Lugar, TramoDetalle } from '@caminos/shared';
-import { fechaCorta, numeroKm, precio } from '../../lib/formato';
+import { fechaCorta, kmEtapa, numeroKm, precio } from '../../lib/formato';
 import {
   aLatLon,
   finEtapa,
@@ -34,7 +34,7 @@ const BOSQUE = '#1E4D3A';
 const ROTULO_LUGAR: Record<Lugar['tipo'], string> = { dormir: 'Dormir', comer: 'Comer' };
 const GLIFO_LUGAR: Record<Lugar['tipo'], string> = { dormir: 'D', comer: 'C' };
 
-const TODAS: Record<Capa, boolean> = { etapas: true, sitios: true, dormir: true, comer: true, fotos: true, otros: true };
+const TODAS: Record<Capa, boolean> = { etapas: true, carretera: true, sitios: true, dormir: true, comer: true, fotos: true, otros: true };
 
 function volarA(mapa: L.Map, destino: Limites | null) {
   if (!destino) return;
@@ -221,8 +221,13 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
         const puntos = puntosEtapa(e);
         const activa = i === etapa;
         const opacity = etapa === null || activa ? 1 : 0.5;
+        // Con recorrido a pie, la ruta por carretera se ve aparte: fina, gris y discontinua
+        const carretera = e.trazaPie && e.traza && capas.carretera ? aLatLon(e.traza) : null;
         return (
           <Fragment key={e.id}>
+            {carretera && (
+              <Polyline positions={carretera} interactive={false} pathOptions={{ color: '#6B7069', weight: 2.5, opacity: 0.8 * opacity, dashArray: '4 6' }} />
+            )}
             <Polyline
               positions={puntos}
               interactive={false}
@@ -270,7 +275,8 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
       ? tramo.etapas.flatMap((e, i) => {
           const fin = finEtapa(e);
           const inicio = i === 0 ? inicioEtapa(e) : null;
-          const datos = [e.fecha && fechaCorta(e.fecha), e.km !== null && `${numeroKm(e.km)} km`].filter(Boolean).join(' · ');
+          const km = kmEtapa(e);
+          const datos = [e.fecha && fechaCorta(e.fecha), km !== null && `${numeroKm(km)} km`].filter(Boolean).join(' · ');
           const nombreInicio = e.origen?.nombre ?? e.titulo.split(' → ')[0];
           return [
             inicio && (
@@ -410,7 +416,9 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
   const enPeninsula = zoom < 7;
   const caminos = new Map([[tramo.camino.slug, tramo.camino]]);
   if (capas.otros) for (const o of otros) if (o.ruta) caminos.set(o.camino.slug, o.camino);
-  const porCarretera = tramo.etapas.some((e) => e.traza && e.trazaOrigen === 'carretera');
+  // El aviso de «por carretera» solo vale para etapas que no tienen recorrido a pie
+  const porCarretera = tramo.etapas.some((e) => e.traza && e.trazaOrigen === 'carretera' && !e.trazaPie);
+  const fuentesPie = [...new Set(tramo.etapas.flatMap((e) => (e.trazaPie && e.trazaPieFuente ? [e.trazaPieFuente] : [])))];
 
   return (
     <div>
@@ -471,6 +479,7 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
             ? `Etapas de ${tramo.anio}. Los pines son lugares y fotos de ese año; − para volver a la península.`
             : `Mapa general: el recuadro marca el tramo de ${tramo.anio}. Tócalo o usa + para acercar.`}
           {porCarretera && <span className="block">Recorrido aproximado por carretera: el Camino rara vez va por la calzada.</span>}
+          {fuentesPie.length > 0 && <span className="block">Recorrido a pie: {fuentesPie.join(' · ')}</span>}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1.5">
           {[...caminos.values()].map((c) => (

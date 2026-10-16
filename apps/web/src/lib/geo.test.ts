@@ -18,6 +18,9 @@ const etapa = (parcial: Partial<Etapa>): Etapa => ({
   traza: null,
   trazaOrigen: 'carretera',
   bbox: null,
+  trazaPie: null,
+  kmPie: null,
+  trazaPieFuente: null,
   sitios: [],
   ...parcial,
 });
@@ -85,6 +88,19 @@ describe('etapas', () => {
       [43.3, -4.0],
     ]);
     expect(finEtapa(e)).toEqual([43.1, -4.1]);
+  });
+
+  it('la línea principal es el recorrido a pie si lo hay', () => {
+    const e = etapa({
+      traza: { type: 'LineString', coordinates: [[-4.0, 43.0], [-4.1, 43.1]] },
+      trazaPie: { type: 'LineString', coordinates: [[-4.0, 43.0], [-4.05, 43.08], [-4.1, 43.1]] },
+      bbox: [-4.1, 43.0, -4.0, 43.1],
+    });
+    expect(inicioEtapa(e)).toEqual([43.0, -4.0]);
+    expect(limitesEtapa(e)).toEqual([
+      [43.0, -4.1],
+      [43.1, -4.0],
+    ]);
   });
 
   it('sin traza ni puntos no tiene posición', () => {

@@ -47,6 +47,11 @@ export function desnivel(metros: number): string {
   return `+${entero.format(metros)} m`;
 }
 
+/** Km de una etapa: los del recorrido a pie si los hay; si no, los de la ruta */
+export function kmEtapa(etapa: { kmPie: number | null; km: number | null }): number | null {
+  return etapa.kmPie ?? etapa.km;
+}
+
 /** 2 → '€€' */
 export function precio(nivel: number | null): string {
   return nivel ? '€'.repeat(nivel) : '';

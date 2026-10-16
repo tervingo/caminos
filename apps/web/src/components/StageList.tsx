@@ -1,5 +1,5 @@
 import type { Etapa, Foto } from '@caminos/shared';
-import { fechaCorta, numeroKm } from '../lib/formato';
+import { fechaCorta, kmEtapa, numeroKm } from '../lib/formato';
 
 interface Props {
   etapas: Etapa[];
@@ -22,7 +22,8 @@ export function StageList({ etapas, fotos = [], ida, vuelta, elegida, onElegir }
       <ol className="m-0 list-none p-0">
         {etapas.map((e, i) => {
           const activa = i === elegida;
-          const datos = [e.fecha && fechaCorta(e.fecha), e.km !== null && `${numeroKm(e.km)} km`].filter(Boolean);
+          const km = kmEtapa(e);
+          const datos = [e.fecha && fechaCorta(e.fecha), km !== null && `${numeroKm(km)} km`].filter(Boolean);
           return (
             <li key={e.id} className="mb-3">
               <button

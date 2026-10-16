@@ -25,7 +25,7 @@ export const publicoRoutes: FastifyPluginAsync<{ db: Db; assetsUrl: string }> = 
     const idsPortada = filas.map((f) => f.tramo.portadaFotoId).filter((id): id is string => id !== null);
     const [trazas, filasPortada] = await Promise.all([
       db
-        .select({ tramoId: etapas.tramoId, traza: etapas.traza })
+        .select({ tramoId: etapas.tramoId, traza: etapas.traza, trazaPie: etapas.trazaPie })
         .from(etapas)
         .where(and(inArray(etapas.tramoId, ids), eq(etapas.tipo, 'camino')))
         .orderBy(asc(etapas.tramoId), asc(etapas.posicion)),
@@ -39,7 +39,7 @@ export const publicoRoutes: FastifyPluginAsync<{ db: Db; assetsUrl: string }> = 
       const portada = tramo.portadaFotoId ? portadas.get(tramo.portadaFotoId) : undefined;
       return {
         ...cabecera(assetsUrl, tramo, camino, propias.length, portada),
-        ruta: rutaResumida(propias.map((e) => e.traza)),
+        ruta: rutaResumida(propias.map((e) => e.trazaPie ?? e.traza)),
       };
     });
   });

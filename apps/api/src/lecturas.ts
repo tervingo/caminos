@@ -53,6 +53,9 @@ export function aEtapa(e: FilaEtapa): Etapa {
     traza: e.traza,
     trazaOrigen: e.trazaOrigen,
     bbox: e.bbox,
+    trazaPie: e.trazaPie,
+    kmPie: e.kmPie,
+    trazaPieFuente: e.trazaPieFuente,
     sitios: e.sitios.map((s) => ({ ...s, fotoId: s.fotoId ?? null })),
   };
 }

@@ -76,6 +76,7 @@ export async function recalcularTramo(db: Ejecutor, tramoId: string): Promise<vo
 
   const coords: Coord[] = [];
   for (const e of filasEtapas) {
+    if (e.trazaPie) coords.push(...e.trazaPie.coordinates);
     if (e.traza) coords.push(...e.traza.coordinates);
     else {
       if (e.origenLat !== null && e.origenLon !== null) coords.push([e.origenLon, e.origenLat]);
@@ -88,7 +89,8 @@ export async function recalcularTramo(db: Ejecutor, tramoId: string): Promise<vo
   coords.push(...filasFotos.map((f): Coord => [f.lon!, f.lat!]));
 
   const conDesnivel = filasEtapas.filter((e) => e.desnivelPos !== null);
-  const kmTotal = Math.round(filasEtapas.reduce((s, e) => s + (e.km ?? 0), 0) * 100) / 100;
+  // Los km caminados son los del recorrido a pie si lo hay; si no, los de la ruta (o los escritos a mano)
+  const kmTotal = Math.round(filasEtapas.reduce((s, e) => s + (e.kmPie ?? e.km ?? 0), 0) * 100) / 100;
 
   await db
     .update(tramos)

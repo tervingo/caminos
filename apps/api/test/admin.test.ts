@@ -212,6 +212,29 @@ describe.skipIf(!url)('editor (API de autor)', () => {
       expect(tramo.ida).not.toBeNull();
     });
 
+    it('guarda el recorrido a pie de las etapas: manda en los km y en el recuadro, y se puede quitar', async () => {
+      const [primera] = tramo.etapas;
+      const kmAntes = tramo.kmTotal;
+      const kmCarretera = primera.km!;
+      const pie = { type: 'LineString', coordinates: [[-1.789, 43.338], [-1.85, 43.42], [-1.921, 43.325]] };
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/recorrido-pie`, {
+        fuente: '© FEAACS / CNIG (CC BY 4.0)',
+        etapas: [{ id: primera.id, traza: pie, km: 15.2 }],
+      });
+      expect(tramo.etapas[0]).toMatchObject({ kmPie: 15.2, km: kmCarretera, trazaPieFuente: '© FEAACS / CNIG (CC BY 4.0)' });
+      expect(tramo.etapas[0].traza).not.toBeNull();
+      expect(tramo.kmTotal).toBeCloseTo(kmAntes - kmCarretera + 15.2);
+      expect(tramo.bbox![3]).toBeGreaterThanOrEqual(43.42);
+
+      // La ida no es una etapa del Camino
+      const conIda = await pedir('PUT', `/api/admin/tramos/${tramo.id}/recorrido-pie`, { fuente: null, etapas: [{ id: tramo.ida?.id ?? primera.id.replace(/.$/, '0'), traza: pie, km: 1 }] });
+      expect(conIda.statusCode).toBe(400);
+
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/recorrido-pie`, { fuente: null, etapas: [{ id: primera.id, traza: null, km: null }] });
+      expect(tramo.etapas[0]).toMatchObject({ trazaPie: null, kmPie: null, trazaPieFuente: null });
+      expect(tramo.kmTotal).toBeCloseTo(kmAntes);
+    });
+
     it('no calcula rutas sin origen y destino', async () => {
       tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/etapas`, { titulo: 'Sin puntos' });
       const res = await pedir('POST', `/api/admin/etapas/${tramo.etapas[2].id}/calcular-ruta`, {});
