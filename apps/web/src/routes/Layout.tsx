@@ -1,5 +1,4 @@
 import { Link, Outlet, ScrollRestoration, useMatch } from 'react-router';
-import { Logo } from '../components/Logo';
 import { CONTENEDOR } from '../components/ui';
 import { pareceAutor } from '../lib/admin';
 
@@ -19,9 +18,16 @@ export function Layout() {
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-linea">
         <div className={`${CONTENEDOR} flex flex-wrap items-center justify-between gap-4 py-[18px]`}>
-          <Link to="/" className="flex items-center gap-2.5">
-            <Logo />
+          <Link to="/" className="flex items-center gap-3 hover:no-underline">
+            <img src="/img/logo.png" alt="" width={80} height={52} className="h-[52px] w-auto" />
             <span className="font-serif text-2xl font-semibold">En Caminos</span>
+            <img
+              src="/img/en-santiago.webp"
+              alt="El grupo ante la catedral de Santiago"
+              width={75}
+              height={100}
+              className="h-[72px] w-auto rounded-lg object-cover sm:h-[100px]"
+            />
           </Link>
           <nav aria-label="Principal" className="flex flex-wrap gap-x-7 gap-y-2 text-[15px] font-medium">
             <Link to="/#anos">Los años</Link>
