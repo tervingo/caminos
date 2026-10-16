@@ -6,10 +6,12 @@ interface Props {
   fotos: Foto[];
   anio: number;
   onVerEnMapa: (id: string) => void;
+  /** Rejilla uniforme (página de fotos) en vez de la primera foto en grande */
+  uniforme?: boolean;
 }
 
 /** Galería del tramo con visor a pantalla completa (dialog nativo: Esc cierra, foco atrapado) */
-export function PhotoGrid({ fotos, anio, onVerEnMapa }: Props) {
+export function PhotoGrid({ fotos, anio, onVerEnMapa, uniforme = false }: Props) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const [abierta, setAbierta] = useState<number | null>(null);
 
@@ -34,14 +36,14 @@ export function PhotoGrid({ fotos, anio, onVerEnMapa }: Props) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${uniforme ? 'lg:grid-cols-4' : ''}`}>
         {fotos.map((f, i) => (
           <button
             key={f.id}
             type="button"
             onClick={() => setAbierta(i)}
             aria-label={`Ampliar: ${textoAlt(f)}`}
-            className={`relative h-40 cursor-pointer overflow-hidden rounded-xl border-0 p-0 sm:h-[220px] ${i === 0 ? 'col-span-2' : ''}`}
+            className={`relative h-40 cursor-pointer overflow-hidden rounded-xl border-0 p-0 sm:h-[220px] ${i === 0 && !uniforme ? 'col-span-2' : ''}`}
             style={{ background: degradado(i + 2) }}
           >
             <img

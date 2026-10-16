@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import type { TramoDetalle } from '@caminos/shared';
 import { MapaDiferido } from '../components/TripMap/MapaDiferido';
 import type { Foco, Vista } from '../components/TripMap/tipos';
 import { NoteList } from '../components/NoteList';
-import { PhotoGrid } from '../components/PhotoGrid';
 import { PlaceCards } from '../components/PlaceCards';
 import { StageList } from '../components/StageList';
 import { Aviso, Cifra, CONTENEDOR, PuntoCamino, ROTULO, TITULO_SECCION } from '../components/ui';
 import { ApiError } from '../lib/api';
 import { useTramo, useTramos } from '../lib/consultas';
+import { fotosPorEtapa, muestraDeFotos } from '../lib/fotosTramo';
 import { desnivel, numeroKm, rangoFechas } from '../lib/formato';
 import { NotFound } from './NotFound';
 
@@ -44,7 +44,15 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
   const vista: Vista = params.get('vista') === 'peninsula' ? 'peninsula' : 'tramo';
   const { data: todos } = useTramos();
   const otros = (todos ?? []).filter((t) => t.slug !== tramo.slug);
-  const [foco, setFoco] = useState<Foco | null>(null);
+  // «Ver en el mapa» desde la página de fotos llega con ?foto=<id>
+  const fotoPedida = params.get('foto');
+  const [foco, setFoco] = useState<Foco | null>(() => (fotoPedida ? { tipo: 'foto', id: fotoPedida, vez: 1 } : null));
+  useEffect(() => {
+    if (fotoPedida) document.getElementById('mapa')?.scrollIntoView({ block: 'center' });
+    // Solo al llegar a la página
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const conteoFotos = new Map(fotosPorEtapa(tramo.etapas, tramo.fotos).etapas.map((e) => [e.etapa.id, e.fotos.length]));
 
   const cambiarParams = (cambios: Record<string, string | null>) =>
     setParams(
@@ -116,7 +124,7 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
           <div id="etapas" className="min-w-0 flex-[1_1_340px] lg:max-w-[440px]">
             <h2 className={`m-0 mb-1 ${ROTULO} text-gris`}>Etapas</h2>
             <p className="mt-0 mb-2 text-sm text-gris">Toca una etapa para verla de cerca en el mapa.</p>
-            <StageList etapas={tramo.etapas} fotos={tramo.fotos} ida={tramo.ida} vuelta={tramo.vuelta} elegida={elegida} onElegir={elegirEtapa} />
+            <StageList etapas={tramo.etapas} fotos={tramo.fotos} slug={tramo.slug} conteoFotos={conteoFotos} ida={tramo.ida} vuelta={tramo.vuelta} elegida={elegida} onElegir={elegirEtapa} />
           </div>
           <div id="mapa" className="min-w-0 flex-[2_1_560px]">
             <MapaDiferido
@@ -138,7 +146,34 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
           <h2 className={TITULO_SECCION}>Fotos de {tramo.anio}</h2>
           {tramo.fotos.length > 0 && <span className="text-[15px] text-gris">{tramo.fotos.length} fotos</span>}
         </div>
-        <PhotoGrid fotos={tramo.fotos} anio={tramo.anio} onVerEnMapa={(id) => verEnMapa('foto', id)} />
+        {tramo.fotos.length === 0 ? (
+          <p className="m-0 rounded-xl border-2 border-dashed border-borde px-5 py-10 text-center text-musgo">Aún no hay fotos de {tramo.anio}.</p>
+        ) : (
+          <>
+            {/* Una franja con unas pocas fotos de todo el tramo; el resto, en la página de fotos por etapa */}
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {muestraDeFotos(tramo.fotos).map((f) => {
+                const numero = tramo.etapas.findIndex((e) => e.id === f.etapaId) + 1;
+                return (
+                  <Link
+                    key={f.id}
+                    to={`/tramos/${tramo.slug}/fotos?${new URLSearchParams({ etapa: numero > 0 ? String(numero) : 'otras' })}`}
+                    aria-label={f.pie ?? `Foto de ${tramo.anio}`}
+                    className="block aspect-square overflow-hidden rounded-xl bg-linea-suave"
+                  >
+                    <img src={f.urlMini} alt="" loading="lazy" className="size-full object-cover transition-transform hover:scale-105" />
+                  </Link>
+                );
+              })}
+            </div>
+            <Link
+              to={`/tramos/${tramo.slug}/fotos`}
+              className="mt-4 inline-flex min-h-11 items-center rounded-full bg-tinta px-5 text-sm font-semibold text-white hover:bg-pizarra hover:no-underline"
+            >
+              Ver las {tramo.fotos.length} fotos →
+            </Link>
+          </>
+        )}
       </section>
 
       <section id="lugares" className={`${CONTENEDOR} pt-16`}>

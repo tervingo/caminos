@@ -11,3 +11,6 @@ Thumbs.db
 coverage/
 .wrangler/
 .playwright-mcp/
+docs/Fotos/EnCaminos_logo.png
+.gitignore
+docs/Fotos/EnSantiago.jpeg

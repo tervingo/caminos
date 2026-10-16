@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import { FotosPage } from './routes/FotosPage';
 import { Home } from './routes/Home';
 import { Layout } from './routes/Layout';
 import { NotFound, RouteError } from './routes/NotFound';
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'tramos/:slug', element: <TripPage /> },
+      { path: 'tramos/:slug/fotos', element: <FotosPage /> },
       { path: 'admin/login', lazy: async () => ({ Component: (await import('./routes/admin/Login')).AdminLogin }) },
       {
         path: 'admin',

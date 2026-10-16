@@ -1,10 +1,14 @@
 import type { Etapa, Foto } from '@caminos/shared';
-import { fechaCorta, kmEtapa, numeroKm } from '../lib/formato';
+import { Link } from 'react-router';
+import { fechaCorta, kmEtapa, numeroKm, plural } from '../lib/formato';
 
 interface Props {
   etapas: Etapa[];
   /** Para la foto de cada sitio de interés */
   fotos?: Foto[];
+  /** Para enlazar las fotos de cada etapa */
+  slug?: string;
+  conteoFotos?: Map<string, number>;
   /** Viajes en coche, fuera de la numeración */
   ida?: Etapa | null;
   vuelta?: Etapa | null;
@@ -13,7 +17,7 @@ interface Props {
   onElegir: (indice: number | null) => void;
 }
 
-export function StageList({ etapas, fotos = [], ida, vuelta, elegida, onElegir }: Props) {
+export function StageList({ etapas, fotos = [], slug, conteoFotos, ida, vuelta, elegida, onElegir }: Props) {
   if (etapas.length === 0 && !ida && !vuelta) return <p className="m-0 text-musgo">Este tramo todavía no tiene etapas.</p>;
 
   return (
@@ -63,6 +67,12 @@ export function StageList({ etapas, fotos = [], ida, vuelta, elegida, onElegir }
                   )}
                 </span>
               </button>
+              {/* Fuera del botón de la etapa: un enlace no puede ir dentro de un botón */}
+              {slug && (conteoFotos?.get(e.id) ?? 0) > 0 && (
+                <Link to={`/tramos/${slug}/fotos?etapa=${i + 1}`} className="mt-1 ml-4 inline-block text-sm font-semibold text-bosque">
+                  {plural(conteoFotos!.get(e.id)!, 'foto')} de esta etapa →
+                </Link>
+              )}
             </li>
           );
         })}
