@@ -1,9 +1,9 @@
 // Fotos: el navegador las reduce a WebP, pide una firma, las sube directo a R2 y luego las registra.
 // El API nunca recibe la imagen; solo comprueba en R2 que lo subido es lo esperado.
 import { randomUUID } from 'node:crypto';
-import { eq, max } from 'drizzle-orm';
+import { asc, eq, max } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
-import { type FirmaFoto, fotoCambiosSchema, fotoEntradaSchema, type TramoEditor, type VarianteFoto } from '@caminos/shared';
+import { type FirmaFoto, fotoCambiosSchema, fotoEntradaSchema, ordenFotosSchema, type TramoEditor, type VarianteFoto } from '@caminos/shared';
 import { etapas, fotos, tramos } from '../../db/schema.js';
 import { HttpError, idValido, noEncontrado, validar } from '../../errores.js';
 import type { R2 } from '../../r2.js';
@@ -77,6 +77,29 @@ export const fotosAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, a
     if (!tramo.portadaFotoId) await db.update(tramos).set({ portadaFotoId: datos.id }).where(eq(tramos.id, tramo.id));
     await recalcularTramo(db, tramo.id);
     reply.code(201);
+    return tramoEditor(db, assetsUrl, tramo.id);
+  });
+
+  // Reordena un grupo de fotos: ocupan los mismos puestos del tramo que antes, en el orden pedido
+  app.put<Params>('/api/admin/tramos/:id/fotos/orden', async (req): Promise<TramoEditor> => {
+    const { tramo } = await cargarTramo(db, req.params.id);
+    const { ids } = validar(ordenFotosSchema, req.body);
+    const todas = await db
+      .select({ id: fotos.id })
+      .from(fotos)
+      .where(eq(fotos.tramoId, tramo.id))
+      .orderBy(asc(fotos.orden), asc(fotos.id));
+    const pedidas = new Set(ids);
+    const propias = todas.filter((f) => pedidas.has(f.id));
+    if (pedidas.size !== ids.length || propias.length !== ids.length) {
+      throw new HttpError(400, 'orden-invalido', 'El orden debe incluir fotos de este tramo, una vez cada una');
+    }
+    // Se rellenan los huecos del grupo con el nuevo orden y se numera todo de nuevo (0, 1, 2…)
+    const cola = [...ids];
+    const nuevo = todas.map((f) => (pedidas.has(f.id) ? cola.shift()! : f.id));
+    await db.transaction(async (tx) => {
+      for (const [orden, id] of nuevo.entries()) await tx.update(fotos).set({ orden }).where(eq(fotos.id, id));
+    });
     return tramoEditor(db, assetsUrl, tramo.id);
   });
 

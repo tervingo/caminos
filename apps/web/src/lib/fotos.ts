@@ -60,12 +60,16 @@ async function subir(url: string, blob: Blob) {
 
 export type FaseSubida = 'leyendo' | 'subiendo' | 'registrando';
 
-/** Procesa, sube y registra una foto. Devuelve el tramo actualizado y el id de la foto. */
+/**
+ * Procesa, sube y registra una foto. Devuelve el tramo actualizado y el id de la foto.
+ * Con `etapaId` la foto va a esa etapa; sin él, a la etapa de su fecha (si la hay).
+ */
 export async function subirFoto(
   tramoId: string,
   etapas: Pick<Etapa, 'id' | 'fecha'>[],
   archivo: File,
   avisar: (fase: FaseSubida) => void,
+  etapaId?: string,
 ): Promise<{ tramo: TramoEditor; id: string }> {
   if (!TIPOS_ADMITIDOS.includes(archivo.type)) throw new Error('Formato no admitido: usa JPEG, PNG o WebP');
 
@@ -94,7 +98,7 @@ export async function subirFoto(
     tomadaEn: meta.tomadaEn?.toISOString() ?? null,
     lat: meta.lat,
     lon: meta.lon,
-    etapaId: etapaDeFecha(etapas, meta.tomadaEn),
+    etapaId: etapaId ?? etapaDeFecha(etapas, meta.tomadaEn),
   });
   return { tramo, id: firma.id };
 }

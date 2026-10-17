@@ -306,6 +306,29 @@ describe.skipIf(!url)('editor (API de autor)', () => {
       expect(clavesMala.some((k) => objetos.has(k))).toBe(false);
     });
 
+    it('reordena un grupo de fotos sin mover las demás', async () => {
+      // Tres fotos más: A (la que ya había), B, C y D
+      const nuevas: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const f = (await pedir('POST', `/api/admin/tramos/${tramo.id}/fotos/firmar`)).json();
+        objetos.set(`fotos/${tramo.id}/${f.id}-grande.webp`, { tamano: 1000, contentType: 'image/webp' });
+        objetos.set(`fotos/${tramo.id}/${f.id}-mini.webp`, { tamano: 100, contentType: 'image/webp' });
+        tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/fotos`, { id: f.id, ancho: 10, alto: 10 });
+        nuevas.push(f.id);
+      }
+      const [a, b, c, d] = tramo.fotos.map((f) => f.id);
+      expect([b, c, d]).toEqual(nuevas);
+      // Se invierte el grupo B, D: C y A quedan en su sitio
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/fotos/orden`, { ids: [d, b] });
+      expect(tramo.fotos.map((f) => f.id)).toEqual([a, d, c, b]);
+      expect(tramo.fotos.map((f) => f.orden)).toEqual([0, 1, 2, 3]);
+      expect((await pedir('PUT', `/api/admin/tramos/${tramo.id}/fotos/orden`, { ids: [b, b] })).statusCode).toBe(400);
+      expect((await pedir('PUT', `/api/admin/tramos/${tramo.id}/fotos/orden`, { ids: [a, '00000000-0000-4000-8000-000000000000'] })).statusCode).toBe(400);
+      // Se dejan como estaban para los tests siguientes
+      for (const id of [b, c, d]) tramo = await editor('DELETE', `/api/admin/fotos/${id}`);
+      expect(tramo.fotos.map((f) => f.id)).toEqual([a]);
+    });
+
     it('oculta al público la posición de una foto si se pide', async () => {
       tramo = await editor('PATCH', `/api/admin/fotos/${tramo.fotos[0].id}`, { mostrarPosicion: false });
       expect(tramo.fotos[0].lat).toBe(43.33);

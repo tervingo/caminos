@@ -17,7 +17,7 @@ import { EstadoTramo } from './AdminHome';
 const SECCIONES = [
   ['datos', 'Datos'],
   ['etapas', 'Etapas'],
-  ['fotos', 'Fotos'],
+  ['fotos', 'Otras fotos'],
   ['notas', 'Notas'],
 ] as const;
 
@@ -104,7 +104,12 @@ function Editor({ tramo }: { tramo: TramoEditor }) {
         <EtapasEditor tramo={tramo} />
       </Seccion>
 
-      <Seccion id="fotos" titulo="Fotos">
+      <Seccion id="fotos" titulo="Otras fotos">
+        <p className="mt-0 mb-4 text-sm text-gris">
+          Las fotos de cada etapa se suben y se ordenan dentro de la etapa. Aquí van las que no son de ninguna (por ejemplo, las del viaje de ida
+          o de vuelta), que en la web salen en la pestaña «Otras». Si subes aquí muchas a la vez, las que tengan la fecha de una etapa irán a esa
+          etapa.
+        </p>
         <FotosEditor tramo={tramo} />
       </Seccion>
 

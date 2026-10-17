@@ -287,6 +287,9 @@ export type RecorridoPie = z.infer<typeof recorridoPieSchema>;
 
 export const ordenEtapasSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
 
+/** Nuevo orden de un grupo de fotos (p. ej. las de una etapa); las demás no se mueven */
+export const ordenFotosSchema = ordenEtapasSchema;
+
 export const calcularRutaSchema = z.object({ perfil: perfilRutaSchema.default('driving-car') });
 
 export const lugarEntradaSchema = z.object({

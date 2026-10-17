@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FotoEditor, TramoEditor } from '@caminos/shared';
+import type { Etapa, FotoEditor, TramoEditor } from '@caminos/shared';
 import { editar, useCambio } from '../../lib/admin';
 import { type FaseSubida, subirFoto, TIPOS_ADMITIDOS } from '../../lib/fotos';
 import { SelectorEtapa } from './LugaresEditor';
@@ -26,12 +26,27 @@ const TEXTO_ESTADO: Record<Estado, string> = {
 /** Fotos a la vez: suficiente para ir rápido sin saturar la conexión */
 const EN_PARALELO = 2;
 
-export function FotosEditor({ tramo }: { tramo: TramoEditor }) {
+/**
+ * Fotos de una etapa (las que se suben aquí van a esa etapa) o, sin etapa, las «otras»: las que no son
+ * de ninguna etapa del Camino. En el orden en que se ven en la web, con flechas para moverlas.
+ */
+export function FotosEditor({ tramo, etapa }: { tramo: TramoEditor; etapa?: Etapa }) {
   const [cola, setCola] = useState<EnCola[]>([]);
   const [arrastrando, setArrastrando] = useState(false);
   const subir = useCambio(async (a: { archivo: File; avisar: (f: FaseSubida) => void }) =>
-    (await subirFoto(tramo.id, tramo.etapas, a.archivo, a.avisar)).tramo,
+    (await subirFoto(tramo.id, tramo.etapas, a.archivo, a.avisar, etapa?.id)).tramo,
   );
+  const ordenar = useCambio((ids: string[]) => editar('PUT', `/api/admin/tramos/${tramo.id}/fotos/orden`, { ids }));
+
+  const idsEtapas = new Set(tramo.etapas.map((e) => e.id));
+  const fotos = etapa
+    ? tramo.fotos.filter((f) => f.etapaId === etapa.id)
+    : tramo.fotos.filter((f) => !f.etapaId || !idsEtapas.has(f.etapaId));
+  const mover = (i: number, paso: number) => {
+    const ids = fotos.map((f) => f.id);
+    [ids[i], ids[i + paso]] = [ids[i + paso], ids[i]];
+    ordenar.mutate(ids);
+  };
 
   const actualizar = (clave: string, cambio: Partial<EnCola>) =>
     setCola((c) => c.map((x) => (x.clave === clave ? { ...x, ...cambio } : x)));
@@ -73,9 +88,10 @@ export function FotosEditor({ tramo }: { tramo: TramoEditor }) {
           arrastrando ? 'border-bosque bg-papel' : 'border-borde'
         }`}
       >
-        <span className="font-semibold">+ Subir fotos</span>
+        <span className="font-semibold">+ Subir fotos{etapa ? ' de esta etapa' : ''}</span>
         <span className="text-sm text-gris">
-          Arrástralas aquí o pulsa para elegirlas (JPEG, PNG o WebP). Se reducen en tu navegador y se asignan a su etapa por la fecha.
+          Arrástralas aquí o pulsa para elegirlas (JPEG, PNG o WebP). Se reducen en tu navegador
+          {etapa ? ' y se añaden al final de esta etapa.' : '. Si su fecha coincide con la de una etapa, van a esa etapa.'}
         </span>
         <input
           type="file"
@@ -110,12 +126,23 @@ export function FotosEditor({ tramo }: { tramo: TramoEditor }) {
         </ul>
       )}
 
-      {tramo.fotos.length === 0 ? (
-        <p className="m-0 text-musgo">Aún no hay fotos.</p>
+      <MensajeError error={ordenar.error} />
+      {fotos.length === 0 ? (
+        <p className="m-0 text-sm text-musgo">{etapa ? 'Todavía no hay fotos de esta etapa.' : 'No hay fotos fuera de las etapas.'}</p>
       ) : (
         <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
-          {tramo.fotos.map((f) => (
-            <FotoFicha key={f.id} tramo={tramo} foto={f} />
+          {fotos.map((f, i) => (
+            <FotoFicha
+              key={f.id}
+              tramo={tramo}
+              foto={f}
+              posicion={i + 1}
+              // Las flechas mueven la foto dentro de su grupo, en el orden en que se ve en la web
+              onMover={fotos.length > 1 ? (paso) => mover(i, paso) : undefined}
+              primera={i === 0}
+              ultima={i === fotos.length - 1}
+              moviendo={ordenar.isPending}
+            />
           ))}
         </ul>
       )}
@@ -123,7 +150,17 @@ export function FotosEditor({ tramo }: { tramo: TramoEditor }) {
   );
 }
 
-function FotoFicha({ tramo, foto }: { tramo: TramoEditor; foto: FotoEditor }) {
+interface PropsFicha {
+  tramo: TramoEditor;
+  foto: FotoEditor;
+  posicion: number;
+  onMover?: (paso: -1 | 1) => void;
+  primera: boolean;
+  ultima: boolean;
+  moviendo: boolean;
+}
+
+function FotoFicha({ tramo, foto, posicion, onMover, primera, ultima, moviendo }: PropsFicha) {
   const [pie, setPie] = useState(foto.pie ?? '');
   const cambiar = useCambio((datos: object) => editar('PATCH', `/api/admin/fotos/${foto.id}`, datos));
   const portada = useCambio(() => editar('PATCH', `/api/admin/tramos/${tramo.id}`, { portadaFotoId: foto.id }));
@@ -133,7 +170,32 @@ function FotoFicha({ tramo, foto }: { tramo: TramoEditor; foto: FotoEditor }) {
 
   return (
     <li className={`flex flex-col overflow-hidden rounded-[14px] border-2 ${esPortada ? 'border-ocre' : 'border-linea'}`}>
-      <img src={foto.urlMini} alt={foto.pie ?? ''} width={foto.ancho} height={foto.alto} loading="lazy" className="aspect-[3/2] w-full bg-linea-suave object-cover" />
+      <div className="relative">
+        <img src={foto.urlMini} alt={foto.pie ?? ''} width={foto.ancho} height={foto.alto} loading="lazy" className="aspect-[3/2] w-full bg-linea-suave object-cover" />
+        <span className="absolute top-2 left-2 rounded-full bg-tinta/80 px-2 py-0.5 text-xs font-semibold text-white tabular-nums">{posicion}</span>
+        {onMover && (
+          <span className="absolute top-2 right-2 flex gap-1">
+            <button
+              type="button"
+              aria-label={`Mover la foto ${posicion} antes`}
+              disabled={primera || moviendo}
+              onClick={() => onMover(-1)}
+              className="size-9 cursor-pointer rounded-full border-0 bg-white/90 text-lg font-semibold text-tinta shadow disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              aria-label={`Mover la foto ${posicion} después`}
+              disabled={ultima || moviendo}
+              onClick={() => onMover(1)}
+              className="size-9 cursor-pointer rounded-full border-0 bg-white/90 text-lg font-semibold text-tinta shadow disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              →
+            </button>
+          </span>
+        )}
+      </div>
       <div className="flex flex-col gap-2 p-3">
         <span className="text-xs text-gris">
           {fecha}

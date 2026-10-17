@@ -4,6 +4,7 @@ import type { Etapa, PerfilRuta, Punto, TramoEditor } from '@caminos/shared';
 import { editar, useCambio } from '../../lib/admin';
 import { desnivel, fechaCorta, numeroKm } from '../../lib/formato';
 import { type Limites, limitesTramo } from '../../lib/geo';
+import { FotosEditor } from './FotosEditor';
 import { LugaresEtapa } from './LugaresEditor';
 import { RecorridoPieEditor } from './RecorridoPieEditor';
 import { SelectorFoto } from './SelectorFoto';
@@ -91,6 +92,10 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
                 <div className="border-t border-linea bg-papel/60 p-4">
                   <h3 className="mt-0 mb-3 text-sm font-semibold">Dónde dormir y comer en esta etapa</h3>
                   <LugaresEtapa tramo={tramo} etapa={e} />
+                </div>
+                <div className="border-t border-linea p-4">
+                  <h3 className="mt-0 mb-3 text-sm font-semibold">Fotos de esta etapa</h3>
+                  <FotosEditor tramo={tramo} etapa={e} />
                 </div>
               </>
             )}
