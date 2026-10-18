@@ -11,7 +11,9 @@ export default defineConfig({
   // mientras Vite la renombra (EBUSY) y la web de desarrollo sale en blanco
   cacheDir: join(tmpdir(), 'caminos-vite'),
   // El mapa y el editor se cargan aparte; sin esto, Vite reoptimiza al abrirlos por primera vez en desarrollo
-  optimizeDeps: { include: ['leaflet', 'react-leaflet', 'react-hook-form', '@hookform/resolvers/zod', 'exifr'] },
+  optimizeDeps: {
+    include: ['leaflet', 'react-leaflet', 'react-hook-form', '@hookform/resolvers/zod', 'exifr', '@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+  },
   server: {
     port: 5173,
     proxy: {
