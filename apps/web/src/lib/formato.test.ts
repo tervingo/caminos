@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { desnivel, fechaCorta, fechaLarga, numeroKm, plural, precio, rangoFechas } from './formato';
+import { desnivel, fechaCorta, fechaLarga, metros, numeroKm, plural, precio, rangoFechas } from './formato';
 
 describe('fechas', () => {
   it('formatea sin depender de la zona horaria', () => {
@@ -27,6 +27,11 @@ describe('cifras', () => {
     expect(numeroKm(68)).toBe('68');
     expect(numeroKm(12.46)).toBe('12,5');
     expect(numeroKm(1234)).toBe('1.234');
+  });
+
+  it('formatea altitudes', () => {
+    expect(metros(1460)).toBe('1.460 m');
+    expect(metros(540.4)).toBe('540 m');
   });
 
   it('formatea el desnivel', () => {

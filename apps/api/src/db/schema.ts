@@ -19,7 +19,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import type { BBox, LineString, Punto, Sitio } from '@caminos/shared';
+import type { BBox, LineString, Perfil, Punto, Sitio } from '@caminos/shared';
 
 export const estadoTramo = pgEnum('estado_tramo', ['borrador', 'publicado']);
 // «Qué ver» no es un tipo de lugar: son los sitios de interés de cada etapa (etapas.sitios)
@@ -87,6 +87,8 @@ export const etapas = pgTable(
     trazaPie: jsonb('traza_pie').$type<LineString>(),
     kmPie: numeric('km_pie', { precision: 6, scale: 2, mode: 'number' }),
     trazaPieFuente: text('traza_pie_fuente'),
+    /** Perfil de altitud de la línea principal (a pie si la hay; si no, la ruta por carretera) */
+    perfil: jsonb('perfil').$type<Perfil>(),
     /** Sitios de interés de la etapa (no tienen por qué estar en la ruta) */
     sitios: jsonb('sitios').$type<Sitio[]>().notNull().default([]),
   },

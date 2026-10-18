@@ -1,0 +1,896 @@
+{
+  "id": "8ad8ce44-97ae-4e9d-a419-bd28fb906aec",
+  "prevId": "8b742350-fdd9-4f9c-a056-a28f32882ce2",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.caminos": {
+      "name": "caminos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "caminos_slug_unique": {
+          "name": "caminos_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.etapas": {
+      "name": "etapas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tramo_id": {
+          "name": "tramo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "posicion": {
+          "name": "posicion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'camino'"
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origen": {
+          "name": "origen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origen_lat": {
+          "name": "origen_lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origen_lon": {
+          "name": "origen_lon",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destino": {
+          "name": "destino",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destino_lat": {
+          "name": "destino_lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destino_lon": {
+          "name": "destino_lon",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "via": {
+          "name": "via",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas": {
+          "name": "notas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "km": {
+          "name": "km",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "desnivel_pos": {
+          "name": "desnivel_pos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "desnivel_neg": {
+          "name": "desnivel_neg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "traza": {
+          "name": "traza",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "traza_origen": {
+          "name": "traza_origen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'carretera'"
+        },
+        "bbox": {
+          "name": "bbox",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gpx_key": {
+          "name": "gpx_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "traza_pie": {
+          "name": "traza_pie",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "km_pie": {
+          "name": "km_pie",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "traza_pie_fuente": {
+          "name": "traza_pie_fuente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perfil": {
+          "name": "perfil",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sitios": {
+          "name": "sitios",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        }
+      },
+      "indexes": {
+        "etapas_tramo_id_tipo_viaje_idx": {
+          "name": "etapas_tramo_id_tipo_viaje_idx",
+          "columns": [
+            {
+              "expression": "tramo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"etapas\".\"tipo\" <> 'camino'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "etapas_tramo_id_tramos_id_fk": {
+          "name": "etapas_tramo_id_tramos_id_fk",
+          "tableFrom": "etapas",
+          "tableTo": "tramos",
+          "columnsFrom": [
+            "tramo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "etapas_tramo_id_posicion_unique": {
+          "name": "etapas_tramo_id_posicion_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tramo_id",
+            "posicion"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "etapas_traza_origen_check": {
+          "name": "etapas_traza_origen_check",
+          "value": "\"etapas\".\"traza_origen\" in ('carretera', 'gpx', 'manual')"
+        },
+        "etapas_tipo_check": {
+          "name": "etapas_tipo_check",
+          "value": "\"etapas\".\"tipo\" in ('camino', 'ida', 'vuelta')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.fotos": {
+      "name": "fotos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tramo_id": {
+          "name": "tramo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etapa_id": {
+          "name": "etapa_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "key_grande": {
+          "name": "key_grande",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_mini": {
+          "name": "key_mini",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ancho": {
+          "name": "ancho",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alto": {
+          "name": "alto",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pie": {
+          "name": "pie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tomada_en": {
+          "name": "tomada_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lon": {
+          "name": "lon",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mostrar_posicion": {
+          "name": "mostrar_posicion",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "fotos_tramo_id_orden_idx": {
+          "name": "fotos_tramo_id_orden_idx",
+          "columns": [
+            {
+              "expression": "tramo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orden",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fotos_tramo_id_tramos_id_fk": {
+          "name": "fotos_tramo_id_tramos_id_fk",
+          "tableFrom": "fotos",
+          "tableTo": "tramos",
+          "columnsFrom": [
+            "tramo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fotos_etapa_id_etapas_id_fk": {
+          "name": "fotos_etapa_id_etapas_id_fk",
+          "tableFrom": "fotos",
+          "tableTo": "etapas",
+          "columnsFrom": [
+            "etapa_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lugares": {
+      "name": "lugares",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tramo_id": {
+          "name": "tramo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etapa_id": {
+          "name": "etapa_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_lugar",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "localidad": {
+          "name": "localidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lon": {
+          "name": "lon",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precio": {
+          "name": "precio",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valoracion": {
+          "name": "valoracion",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nota": {
+          "name": "nota",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "foto_id": {
+          "name": "foto_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "lugares_tramo_id_idx": {
+          "name": "lugares_tramo_id_idx",
+          "columns": [
+            {
+              "expression": "tramo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lugares_tramo_id_tramos_id_fk": {
+          "name": "lugares_tramo_id_tramos_id_fk",
+          "tableFrom": "lugares",
+          "tableTo": "tramos",
+          "columnsFrom": [
+            "tramo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lugares_etapa_id_etapas_id_fk": {
+          "name": "lugares_etapa_id_etapas_id_fk",
+          "tableFrom": "lugares",
+          "tableTo": "etapas",
+          "columnsFrom": [
+            "etapa_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lugares_foto_id_fotos_id_fk": {
+          "name": "lugares_foto_id_fotos_id_fk",
+          "tableFrom": "lugares",
+          "tableTo": "fotos",
+          "columnsFrom": [
+            "foto_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "lugares_lat_check": {
+          "name": "lugares_lat_check",
+          "value": "\"lugares\".\"lat\" between -90 and 90"
+        },
+        "lugares_lon_check": {
+          "name": "lugares_lon_check",
+          "value": "\"lugares\".\"lon\" between -180 and 180"
+        },
+        "lugares_precio_check": {
+          "name": "lugares_precio_check",
+          "value": "\"lugares\".\"precio\" between 1 and 3"
+        },
+        "lugares_valoracion_check": {
+          "name": "lugares_valoracion_check",
+          "value": "\"lugares\".\"valoracion\" between 1 and 5"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.notas": {
+      "name": "notas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tramo_id": {
+          "name": "tramo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etapa_id": {
+          "name": "etapa_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "texto": {
+          "name": "texto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "notas_tramo_id_fecha_idx": {
+          "name": "notas_tramo_id_fecha_idx",
+          "columns": [
+            {
+              "expression": "tramo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notas_tramo_id_tramos_id_fk": {
+          "name": "notas_tramo_id_tramos_id_fk",
+          "tableFrom": "notas",
+          "tableTo": "tramos",
+          "columnsFrom": [
+            "tramo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "notas_etapa_id_etapas_id_fk": {
+          "name": "notas_etapa_id_etapas_id_fk",
+          "tableFrom": "notas",
+          "tableTo": "etapas",
+          "columnsFrom": [
+            "etapa_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tramos": {
+      "name": "tramos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "anio": {
+          "name": "anio",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "camino_id": {
+          "name": "camino_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resumen": {
+          "name": "resumen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_inicio": {
+          "name": "fecha_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_fin": {
+          "name": "fecha_fin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_tramo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'borrador'"
+        },
+        "km_total": {
+          "name": "km_total",
+          "type": "numeric(7, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "desnivel_pos_total": {
+          "name": "desnivel_pos_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "bbox": {
+          "name": "bbox",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "portada_foto_id": {
+          "name": "portada_foto_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tramos_camino_id_caminos_id_fk": {
+          "name": "tramos_camino_id_caminos_id_fk",
+          "tableFrom": "tramos",
+          "tableTo": "caminos",
+          "columnsFrom": [
+            "camino_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tramos_portada_foto_id_fotos_id_fk": {
+          "name": "tramos_portada_foto_id_fotos_id_fk",
+          "tableFrom": "tramos",
+          "tableTo": "fotos",
+          "columnsFrom": [
+            "portada_foto_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tramos_slug_unique": {
+          "name": "tramos_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuarios": {
+      "name": "usuarios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "usuarios_email_unique": {
+          "name": "usuarios_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.estado_tramo": {
+      "name": "estado_tramo",
+      "schema": "public",
+      "values": [
+        "borrador",
+        "publicado"
+      ]
+    },
+    "public.tipo_lugar": {
+      "name": "tipo_lugar",
+      "schema": "public",
+      "values": [
+        "dormir",
+        "comer"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

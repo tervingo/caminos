@@ -6,6 +6,8 @@ import {
   etapaEntradaSchema,
   ordenEtapasSchema,
   recorridoPieSchema,
+  type Perfil,
+  perfilDe,
   type Punto,
   type TramoEditor,
 } from '@caminos/shared';
@@ -132,16 +134,64 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
     return tramoEditor(db, assetsUrl, tramo.id);
   });
 
+  /** Perfil de una línea con las altitudes de ORS; sin ORS, o si falla, no hay perfil (no es motivo para no guardar) */
+  const perfilDeLinea = async (coords: [number, number][], log: { warn: (o: object, m: string) => void }): Promise<Perfil | null> => {
+    if (!ors || coords.length < 2) return null;
+    try {
+      return perfilDe(await ors.altitudes(coords));
+    } catch (err) {
+      log.warn({ err }, 'No se pudo calcular el perfil de altitud');
+      return null;
+    }
+  };
+  /** El desnivel de una etapa sale de su perfil cuando lo hay, para que cifras y gráfico coincidan */
+  const columnasPerfil = (perfil: Perfil | null) => ({
+    perfil,
+    ...(perfil && { desnivelPos: perfil.subida, desnivelNeg: perfil.bajada }),
+  });
+
+  // Recalcula el perfil de todas las etapas del Camino (las que ya existían o las que no lo tienen)
+  app.post<Params>('/api/admin/tramos/:id/perfiles', async (req): Promise<TramoEditor> => {
+    if (!ors) throw new HttpError(503, 'rutas-sin-configurar', 'Falta la clave de OpenRouteService (ORS_API_KEY)');
+    const { tramo } = await cargarTramo(db, req.params.id);
+    const filas = await db
+      .select({ id: etapas.id, traza: etapas.traza, trazaPie: etapas.trazaPie, perfil: etapas.perfil })
+      .from(etapas)
+      .where(and(eq(etapas.tramoId, tramo.id), eq(etapas.tipo, 'camino')));
+    for (const e of filas) {
+      // Un perfil con las altitudes medidas del GPX es mejor que el del terreno: no se sustituye
+      if (e.trazaPie && e.perfil?.origen === 'gpx') continue;
+      const linea = e.trazaPie ?? e.traza;
+      if (!linea) continue;
+      const perfil = await perfilDeLinea(linea.coordinates, req.log);
+      if (perfil) await db.update(etapas).set(columnasPerfil(perfil)).where(eq(etapas.id, e.id));
+    }
+    await recalcularTramo(db, tramo.id);
+    return tramoEditor(db, assetsUrl, tramo.id);
+  });
+
   // Recorridos a pie recortados en el navegador de los GPX subidos (p. ej. del CNIG)
   app.put<Params>('/api/admin/tramos/:id/recorrido-pie', { bodyLimit: 5 * 1024 * 1024 }, async (req): Promise<TramoEditor> => {
     const { tramo } = await cargarTramo(db, req.params.id);
     const { fuente, etapas: cambios } = validar(recorridoPieSchema, req.body);
     const propias = await db
-      .select({ id: etapas.id })
+      .select({ id: etapas.id, traza: etapas.traza })
       .from(etapas)
       .where(and(eq(etapas.tramoId, tramo.id), eq(etapas.tipo, 'camino')));
-    const ids = new Set(propias.map((e) => e.id));
-    if (!cambios.every((c) => ids.has(c.id))) throw new HttpError(400, 'etapa-ajena', 'Alguna etapa no es del Camino de este tramo');
+    const porId = new Map(propias.map((e) => [e.id, e]));
+    if (!cambios.every((c) => porId.has(c.id))) throw new HttpError(400, 'etapa-ajena', 'Alguna etapa no es del Camino de este tramo');
+
+    // El perfil sigue a la línea principal: el del GPX si trae altitudes; si no, el del terreno del
+    // recorrido a pie o, si este se quita, el de la ruta por carretera
+    const perfiles = new Map<string, Perfil | null>();
+    for (const c of cambios) {
+      if (c.traza && c.perfil) {
+        perfiles.set(c.id, c.perfil);
+        continue;
+      }
+      const linea = c.traza ?? porId.get(c.id)!.traza;
+      perfiles.set(c.id, linea ? await perfilDeLinea(linea.coordinates, req.log) : null);
+    }
 
     await db.transaction(async (tx) => {
       for (const c of cambios) {
@@ -151,6 +201,7 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
             trazaPie: c.traza ? { type: 'LineString', coordinates: c.traza.coordinates } : null,
             kmPie: c.traza ? c.km : null,
             trazaPieFuente: c.traza ? fuente : null,
+            ...columnasPerfil(perfiles.get(c.id) ?? null),
           })
           .where(eq(etapas.id, c.id));
       }
@@ -183,9 +234,11 @@ export const etapasAdmin: FastifyPluginAsync<OpcionesAdmin> = async (app, { db, 
         trazaOrigen: 'carretera',
         bbox: bboxDe(coordenadas),
         km: Math.round(ruta.metros / 10) / 100,
-        // El desnivel de un viaje en coche (la ida o la vuelta) no dice nada: solo se guarda en las etapas
-        desnivelPos: ruta.subida === null || etapa.tipo !== 'camino' ? null : Math.round(ruta.subida),
-        desnivelNeg: ruta.bajada === null || etapa.tipo !== 'camino' ? null : Math.round(ruta.bajada),
+        // El desnivel y el perfil de un viaje en coche (la ida o la vuelta) no dicen nada; si la etapa
+        // tiene recorrido a pie, su perfil y su desnivel son los de ese recorrido y no se tocan
+        ...(etapa.tipo !== 'camino'
+          ? { desnivelPos: null, desnivelNeg: null, perfil: null }
+          : !etapa.trazaPie && columnasPerfil(perfilDe(ruta.conAltitud))),
       })
       .where(eq(etapas.id, etapa.id));
     await recalcularTramo(db, etapa.tramoId);

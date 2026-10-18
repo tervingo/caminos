@@ -10,7 +10,7 @@ import { Aviso, Cifra, CONTENEDOR, PuntoCamino, ROTULO, TITULO_SECCION } from '.
 import { ApiError } from '../lib/api';
 import { useTramo, useTramos } from '../lib/consultas';
 import { fotosPorEtapa, muestraDeFotos } from '../lib/fotosTramo';
-import { desnivel, numeroKm, rangoFechas } from '../lib/formato';
+import { numeroKm, plural, rangoFechas } from '../lib/formato';
 import { NotFound } from './NotFound';
 
 export function TripPage() {
@@ -97,7 +97,6 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
           <div className="flex flex-wrap gap-x-8 gap-y-4 sm:gap-x-9">
             <Cifra valor={numeroKm(tramo.kmTotal)} etiqueta="kilómetros" />
             <Cifra valor={tramo.numEtapas} etiqueta={tramo.numEtapas === 1 ? 'etapa' : 'etapas'} />
-            <Cifra valor={tramo.desnivelPosTotal > 0 ? desnivel(tramo.desnivelPosTotal) : '—'} etiqueta="desnivel +" />
           </div>
         </div>
         {tramo.portada && (
@@ -123,8 +122,8 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
         <div className="mt-8 flex flex-wrap items-start gap-6">
           <div id="etapas" className="min-w-0 flex-[1_1_340px] lg:max-w-[440px]">
             <h2 className={`m-0 mb-1 ${ROTULO} text-gris`}>Etapas</h2>
-            <p className="mt-0 mb-2 text-sm text-gris">Toca una etapa para verla de cerca en el mapa.</p>
-            <StageList etapas={tramo.etapas} fotos={tramo.fotos} slug={tramo.slug} conteoFotos={conteoFotos} ida={tramo.ida} vuelta={tramo.vuelta} elegida={elegida} onElegir={elegirEtapa} />
+            <p className="mt-0 mb-2 text-sm text-gris">Pulsa una etapa para ver su ficha completa.</p>
+            <StageList etapas={tramo.etapas} slug={tramo.slug} conteoFotos={conteoFotos} ida={tramo.ida} vuelta={tramo.vuelta} elegida={elegida} />
           </div>
           <div id="mapa" className="min-w-0 flex-[2_1_560px]">
             <MapaDiferido
@@ -144,7 +143,7 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
       <section id="galeria" className={`${CONTENEDOR} pt-14`}>
         <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
           <h2 className={TITULO_SECCION}>Fotos de {tramo.anio}</h2>
-          {tramo.fotos.length > 0 && <span className="text-[15px] text-gris">{tramo.fotos.length} fotos</span>}
+          {tramo.fotos.length > 0 && <span className="text-[15px] text-gris">{plural(tramo.fotos.length, 'foto')}</span>}
         </div>
         {tramo.fotos.length === 0 ? (
           <p className="m-0 rounded-xl border-2 border-dashed border-borde px-5 py-10 text-center text-musgo">Aún no hay fotos de {tramo.anio}.</p>

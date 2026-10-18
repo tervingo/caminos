@@ -2,7 +2,7 @@ import 'leaflet/dist/leaflet.css';
 import './mapa.css';
 import L from 'leaflet';
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AttributionControl, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { AttributionControl, CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet';
 import { useNavigate } from 'react-router';
 import type { Lugar, TramoDetalle } from '@caminos/shared';
 import { fechaCorta, kmEtapa, numeroKm, precio } from '../../lib/formato';
@@ -59,7 +59,7 @@ function capaDeFoco(tramo: TramoDetalle, foco: Foco): Capa {
 
 const claveFoco = (foco: Foco) => `${foco.tipo}:${foco.id}`;
 
-export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, foco }: TripMapProps) {
+export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, foco, marcador = null }: TripMapProps) {
   const navigate = useNavigate();
   const [mapa, setMapa] = useState<L.Map | null>(null);
   const [zoom, setZoom] = useState(5);
@@ -467,6 +467,14 @@ export default function TripMap({ tramo, otros, etapa, onEtapa, vista, onVista, 
           {marcadoresSitios}
           {marcadoresLugares}
           {marcadoresFotos}
+          {marcador && (
+            <CircleMarker
+              center={marcador}
+              radius={7}
+              interactive={false}
+              pathOptions={{ color: '#fff', weight: 3, fillColor: '#B07A0F', fillOpacity: 1 }}
+            />
+          )}
         </MapContainer>
         <div className="pointer-events-none absolute top-3 right-3 z-[1000] rounded-full border border-[#CFCBBF] bg-white/92 px-3.5 py-1.5 text-[13px] font-semibold">
           Vista: {nivelVista(zoom)}

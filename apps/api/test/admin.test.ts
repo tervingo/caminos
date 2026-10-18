@@ -2,7 +2,7 @@
 // ¡Ojo! Borran por completo la base de TEST_DATABASE_URL.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
-import { type TramoEditor, tramoAdminSchema, tramoDetalleSchema, tramoEditorSchema } from '@caminos/shared';
+import { perfilDe, type TramoEditor, tramoAdminSchema, tramoDetalleSchema, tramoEditorSchema } from '@caminos/shared';
 import { buildApp } from '../src/app.js';
 import { hashPassword } from '../src/auth.js';
 import { loadConfig } from '../src/config.js';
@@ -30,13 +30,19 @@ function r2Falso() {
 }
 
 const orsFalso: Ors = {
-  // Línea recta con un punto intermedio desviado, 12,345 km y desnivel
-  ruta: async (puntos) => ({
-    coordenadas: [puntos[0], [(puntos[0][0] + puntos.at(-1)![0]) / 2, puntos[0][1] + 0.05], puntos.at(-1)!],
-    metros: 12_345,
-    subida: 321.4,
-    bajada: 98.6,
-  }),
+  // Línea recta con un punto intermedio desviado, 12,345 km; sube de 100 a 400 m y baja a 250 m
+  ruta: async (puntos) => {
+    const coordenadas: [number, number][] = [puntos[0], [(puntos[0][0] + puntos.at(-1)![0]) / 2, puntos[0][1] + 0.05], puntos.at(-1)!];
+    return {
+      coordenadas,
+      conAltitud: coordenadas.map(([lon, lat], i): [number, number, number] => [lon, lat, [100, 400, 250][i]]),
+      metros: 12_345,
+      subida: 321.4,
+      bajada: 98.6,
+    };
+  },
+  // Cada punto 10 m más alto que el anterior
+  altitudes: async (coords) => coords.map(([lon, lat], i): [number, number, number] => [lon, lat, 500 + i * 10]),
   buscar: async (texto) => [{ nombre: texto, etiqueta: `${texto}, Cantabria, España`, lat: 43.2, lon: -4.6 }],
   inverso: async (lat, lon) => ({ nombre: 'Potes', etiqueta: 'Potes, Cantabria, España', lat, lon }),
 };
@@ -149,10 +155,13 @@ describe.skipIf(!url)('editor (API de autor)', () => {
 
       const [primera] = tramo.etapas;
       tramo = await editor('POST', `/api/admin/etapas/${primera.id}/calcular-ruta`, { perfil: 'foot-walking' });
-      expect(tramo.etapas[0]).toMatchObject({ km: 12.35, desnivelPos: 321, desnivelNeg: 99, trazaOrigen: 'carretera' });
+      // El desnivel sale del perfil de la ruta, para que cifras y gráfico coincidan
+      expect(tramo.etapas[0]).toMatchObject({ km: 12.35, desnivelPos: 300, desnivelNeg: 150, trazaOrigen: 'carretera' });
+      expect(tramo.etapas[0].perfil).toMatchObject({ subida: 300, bajada: 150, minima: 100, maxima: 400 });
+      expect(tramo.etapas[0].perfil!.puntos.map((p) => p[1])).toEqual([100, 400, 250]);
       expect(tramo.etapas[0].traza?.coordinates).toHaveLength(3);
       expect(tramo.kmTotal).toBe(19.35);
-      expect(tramo.desnivelPosTotal).toBe(321);
+      expect(tramo.desnivelPosTotal).toBe(300);
       expect(tramo.bbox).not.toBeNull();
     });
 
@@ -222,6 +231,9 @@ describe.skipIf(!url)('editor (API de autor)', () => {
         etapas: [{ id: primera.id, traza: pie, km: 15.2 }],
       });
       expect(tramo.etapas[0]).toMatchObject({ kmPie: 15.2, km: kmCarretera, trazaPieFuente: '© FEAACS / CNIG (CC BY 4.0)' });
+      // El perfil pasa a ser el del recorrido a pie (altitudes de ORS: 500, 510, 520)
+      expect(tramo.etapas[0].perfil).toMatchObject({ subida: 20, bajada: 0, minima: 500, maxima: 520 });
+      expect(tramo.etapas[0].desnivelPos).toBe(20);
       expect(tramo.etapas[0].traza).not.toBeNull();
       expect(tramo.kmTotal).toBeCloseTo(kmAntes - kmCarretera + 15.2);
       expect(tramo.bbox![3]).toBeGreaterThanOrEqual(43.42);
@@ -232,6 +244,24 @@ describe.skipIf(!url)('editor (API de autor)', () => {
 
       tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/recorrido-pie`, { fuente: null, etapas: [{ id: primera.id, traza: null, km: null }] });
       expect(tramo.etapas[0]).toMatchObject({ trazaPie: null, kmPie: null, trazaPieFuente: null });
+      // Sin recorrido a pie, vuelve el perfil de la ruta por carretera
+      expect(tramo.etapas[0].perfil?.puntos).toHaveLength(tramo.etapas[0].traza!.coordinates.length);
+      tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/perfiles`);
+      expect(tramo.etapas[0].perfil).not.toBeNull();
+      expect(tramo.ida?.perfil ?? null).toBeNull();
+
+      // Con altitudes del GPX, el perfil llega hecho del navegador y «Recalcular» no lo sustituye
+      const gpx = perfilDe([[-1.789, 43.338, 10], [-1.85, 43.42, 250], [-1.921, 43.325, 40]], 'gpx')!;
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/recorrido-pie`, {
+        fuente: null,
+        etapas: [{ id: primera.id, traza: pie, km: 15.2, perfil: gpx }],
+      });
+      expect(tramo.etapas[0].perfil).toMatchObject({ origen: 'gpx', subida: 240, bajada: 210 });
+      expect(tramo.etapas[0].desnivelPos).toBe(240);
+      tramo = await editor('POST', `/api/admin/tramos/${tramo.id}/perfiles`);
+      expect(tramo.etapas[0].perfil?.origen).toBe('gpx');
+      tramo = await editor('PUT', `/api/admin/tramos/${tramo.id}/recorrido-pie`, { fuente: null, etapas: [{ id: primera.id, traza: null, km: null }] });
+      expect(tramo.etapas[0].perfil?.origen).toBe('terreno');
       expect(tramo.kmTotal).toBeCloseTo(kmAntes);
     });
 

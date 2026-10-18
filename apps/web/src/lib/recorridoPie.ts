@@ -3,7 +3,10 @@
 // y se toma el camino más corto entre ambos por esa red.
 
 export type LatLon = [number, number];
+/** Punto de un GPX: [lat, lon] o [lat, lon, altitud] */
+export type PuntoGpx = [number, number] | [number, number, number];
 type Coord = [number, number]; // [lon, lat], como en GeoJSON
+type Coord3 = [number, number, number]; // [lon, lat, altitud]
 
 const R = 6_371_000;
 const rad = (g: number) => (g * Math.PI) / 180;
@@ -21,20 +24,24 @@ const HUECO_MAX = 150;
 
 export interface Red {
   pos: LatLon[];
+  /** Altitud de cada punto si el GPX la trae */
+  alt: (number | null)[];
   ady: [number, number][][]; // vecino, metros
 }
 
-export function construirRed(tracks: LatLon[][]): Red {
+export function construirRed(tracks: PuntoGpx[][]): Red {
   const indice = new Map<string, number>();
   const pos: LatLon[] = [];
+  const alt: (number | null)[] = [];
   const ady: [number, number][][] = [];
-  const nodo = (p: LatLon) => {
-    const k = clave(p);
+  const nodo = (p: PuntoGpx) => {
+    const k = clave([p[0], p[1]]);
     let n = indice.get(k);
     if (n === undefined) {
       n = pos.length;
       indice.set(k, n);
-      pos.push(p);
+      pos.push([p[0], p[1]]);
+      alt.push(p[2] ?? null);
       ady.push([]);
     }
     return n;
@@ -74,7 +81,7 @@ export function construirRed(tracks: LatLon[][]): Red {
     }
     if (mejor >= 0) unir(e.nodo, mejor);
   }
-  return { pos, ady };
+  return { pos, alt, ady };
 }
 
 function masCercano(red: Red, p: LatLon): { nodo: number; metros: number } {
@@ -174,7 +181,15 @@ export function simplificar(coords: Coord[], toleranciaM = 5): Coord[] {
 }
 
 export type ResultadoPie =
-  | { ok: true; coordenadas: Coord[]; metros: number; aOrigen: number; aDestino: number }
+  | {
+      ok: true;
+      coordenadas: Coord[];
+      metros: number;
+      aOrigen: number;
+      aDestino: number;
+      /** Todos los puntos del recorrido con su altitud, si el GPX la trae en todos ellos (para el perfil) */
+      conAltitud: Coord3[] | null;
+    }
   | { ok: false; motivo: 'lejos' | 'sin-conexion'; aOrigen: number; aDestino: number };
 
 /** Origen o destino a más de esto del track: la etapa no está en esos ficheros */
@@ -191,5 +206,8 @@ export function recortar(red: Red, origen: LatLon, destino: LatLon): ResultadoPi
   let metros = 0;
   for (let i = 1; i < camino.length; i++) metros += distancia(red.pos[camino[i - 1]], red.pos[camino[i]]);
   const coordenadas = simplificar(camino.map((n): Coord => [red.pos[n][1], red.pos[n][0]]));
-  return { ok: true, coordenadas, metros, ...base };
+  const conAltitud = camino.every((n) => red.alt[n] !== null)
+    ? camino.map((n): Coord3 => [red.pos[n][1], red.pos[n][0], red.alt[n]!])
+    : null;
+  return { ok: true, coordenadas, metros, conAltitud, ...base };
 }

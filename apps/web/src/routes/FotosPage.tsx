@@ -6,6 +6,7 @@ import { Aviso, CONTENEDOR } from '../components/ui';
 import { ApiError } from '../lib/api';
 import { useTramo } from '../lib/consultas';
 import { fotosPorEtapa } from '../lib/fotosTramo';
+import { plural } from '../lib/formato';
 import { NotFound } from './NotFound';
 
 export function FotosPage() {
@@ -64,7 +65,7 @@ function Fotos({ tramo }: { tramo: TramoDetalle }) {
       </Link>
       <div className="mt-3 mb-6 flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="m-0 font-serif text-[38px] leading-tight font-medium sm:text-[44px]">Fotos de {tramo.anio}</h1>
-        <span className="text-[15px] text-gris">{tramo.fotos.length} fotos</span>
+        <span className="text-[15px] text-gris">{plural(tramo.fotos.length, 'foto')}</span>
       </div>
 
       {tramo.fotos.length === 0 ? (

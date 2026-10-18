@@ -1,15 +1,18 @@
 // Lectura de GPX en el navegador (DOMParser): tracks (trkseg/trkpt) y rutas (rte/rtept), GPX 1.0 o 1.1.
-import type { LatLon } from './recorridoPie';
+import type { PuntoGpx } from './recorridoPie';
 
-/** Cada segmento de track o ruta como lista de puntos [lat, lon] */
-export function leerGpx(texto: string): LatLon[][] {
+/** Cada segmento de track o ruta como lista de puntos [lat, lon] o [lat, lon, altitud] si el GPX la trae */
+export function leerGpx(texto: string): PuntoGpx[][] {
   const doc = new DOMParser().parseFromString(texto, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length > 0) throw new Error('No es un GPX válido');
-  const puntos = (padre: Element, etiqueta: string): LatLon[] =>
-    [...padre.getElementsByTagNameNS('*', etiqueta)].flatMap((p): LatLon[] => {
+  const puntos = (padre: Element, etiqueta: string): PuntoGpx[] =>
+    [...padre.getElementsByTagNameNS('*', etiqueta)].flatMap((p): PuntoGpx[] => {
       const lat = Number(p.getAttribute('lat'));
       const lon = Number(p.getAttribute('lon'));
-      return Number.isFinite(lat) && Number.isFinite(lon) ? [[lat, lon]] : [];
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
+      const ele = p.getElementsByTagNameNS('*', 'ele')[0]?.textContent?.trim();
+      const altitud = ele ? Number(ele) : NaN;
+      return [Number.isFinite(altitud) ? [lat, lon, altitud] : [lat, lon]];
     });
   const segmentos = [
     ...[...doc.getElementsByTagNameNS('*', 'trkseg')].map((s) => puntos(s, 'trkpt')),

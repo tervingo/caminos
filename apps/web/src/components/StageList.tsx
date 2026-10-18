@@ -1,23 +1,21 @@
-import type { Etapa, Foto } from '@caminos/shared';
+import type { Etapa } from '@caminos/shared';
 import { Link } from 'react-router';
 import { fechaCorta, kmEtapa, numeroKm, plural } from '../lib/formato';
 
 interface Props {
   etapas: Etapa[];
-  /** Para la foto de cada sitio de interés */
-  fotos?: Foto[];
-  /** Para enlazar las fotos de cada etapa */
-  slug?: string;
+  /** Para enlazar la ficha de cada etapa */
+  slug: string;
   conteoFotos?: Map<string, number>;
   /** Viajes en coche, fuera de la numeración */
   ida?: Etapa | null;
   vuelta?: Etapa | null;
-  /** Índice de la etapa elegida, o null */
-  elegida: number | null;
-  onElegir: (indice: number | null) => void;
+  /** Índice de la etapa resaltada en el mapa, o null */
+  elegida?: number | null;
 }
 
-export function StageList({ etapas, fotos = [], slug, conteoFotos, ida, vuelta, elegida, onElegir }: Props) {
+/** Tarjetas de las etapas: cada una lleva a su ficha completa */
+export function StageList({ etapas, slug, conteoFotos, ida, vuelta, elegida = null }: Props) {
   if (etapas.length === 0 && !ida && !vuelta) return <p className="m-0 text-musgo">Este tramo todavía no tiene etapas.</p>;
 
   return (
@@ -25,54 +23,31 @@ export function StageList({ etapas, fotos = [], slug, conteoFotos, ida, vuelta, 
       {ida && <Viaje etapa={ida} />}
       <ol className="m-0 list-none p-0">
         {etapas.map((e, i) => {
-          const activa = i === elegida;
           const km = kmEtapa(e);
           const datos = [e.fecha && fechaCorta(e.fecha), km !== null && `${numeroKm(km)} km`].filter(Boolean);
+          const nFotos = conteoFotos?.get(e.id) ?? 0;
+          const resumen = [e.sitios.length > 0 && plural(e.sitios.length, 'sitio de interés', 'sitios de interés'), nFotos > 0 && plural(nFotos, 'foto')].filter(
+            Boolean,
+          );
           return (
             <li key={e.id} className="mb-3">
-              <button
-                type="button"
-                aria-pressed={activa}
-                onClick={() => onElegir(activa ? null : i)}
-                className={`flex w-full cursor-pointer gap-3.5 rounded-[14px] border-2 bg-white p-4 text-left text-inherit ${
-                  activa ? 'border-ocre' : 'border-linea hover:border-borde'
+              <Link
+                to={`/tramos/${slug}/etapas/${i + 1}`}
+                className={`flex w-full gap-3.5 rounded-[14px] border-2 bg-white p-4 text-inherit hover:no-underline ${
+                  i === elegida ? 'border-ocre' : 'border-linea hover:border-borde'
                 }`}
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bosque font-semibold text-white">
-                  {i + 1}
-                </span>
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bosque font-semibold text-white">{i + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[17px] font-semibold">{e.titulo}</span>
                   {datos.length > 0 && <span className="block text-[13px] font-semibold text-bosque">{datos.join(' · ')}</span>}
-                  {e.notas && <span className="mt-1.5 block text-sm text-musgo">{e.notas}</span>}
-                  {e.sitios.length > 0 && (
-                    <span className="mt-2.5 block border-t border-linea-suave pt-2">
-                      <span className="block text-xs font-semibold uppercase tracking-[.08em] text-ambar-oscuro">★ Sitios de interés</span>
-                      {e.sitios.map((s, j) => {
-                        const foto = s.fotoId ? fotos.find((f) => f.id === s.fotoId) : undefined;
-                        return (
-                          <span key={j} className="mt-1.5 flex gap-2.5 text-sm">
-                            {foto && (
-                              <img src={foto.urlMini} alt={foto.pie ?? s.nombre} loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />
-                            )}
-                            <span className="min-w-0">
-                              <span className="font-semibold">{s.nombre}</span>
-                              {s.localidad && <span className="text-gris"> · {s.localidad}</span>}
-                              {s.nota && <span className="block text-[13px] text-musgo">{s.nota}</span>}
-                            </span>
-                          </span>
-                        );
-                      })}
-                    </span>
-                  )}
+                  {e.notas && <span className="mt-1.5 line-clamp-2 block text-sm text-musgo">{e.notas}</span>}
+                  {resumen.length > 0 && <span className="mt-1.5 block text-[13px] text-gris">{resumen.join(' · ')}</span>}
                 </span>
-              </button>
-              {/* Fuera del botón de la etapa: un enlace no puede ir dentro de un botón */}
-              {slug && (conteoFotos?.get(e.id) ?? 0) > 0 && (
-                <Link to={`/tramos/${slug}/fotos?etapa=${i + 1}`} className="mt-1 ml-4 inline-block text-sm font-semibold text-bosque">
-                  {plural(conteoFotos!.get(e.id)!, 'foto')} de esta etapa →
-                </Link>
-              )}
+                <span aria-hidden="true" className="self-center text-xl text-bosque">
+                  →
+                </span>
+              </Link>
             </li>
           );
         })}

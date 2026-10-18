@@ -21,4 +21,6 @@ export interface TripMapProps {
   vista: Vista;
   onVista: (vista: Vista) => void;
   foco: Foco | null;
+  /** Punto que se señala en el mapa (p. ej. el que se recorre en el perfil de altitud) */
+  marcador?: [number, number] | null;
 }

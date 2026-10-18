@@ -6,6 +6,7 @@ import { desnivel, fechaCorta, numeroKm } from '../../lib/formato';
 import { type Limites, limitesTramo } from '../../lib/geo';
 import { FotosEditor } from './FotosEditor';
 import { LugaresEtapa } from './LugaresEditor';
+import { PerfilesEditor } from './PerfilesEditor';
 import { RecorridoPieEditor } from './RecorridoPieEditor';
 import { SelectorFoto } from './SelectorFoto';
 import { SelectorPunto } from './SelectorPunto';
@@ -113,6 +114,7 @@ export function EtapasEditor({ tramo }: { tramo: TramoEditor }) {
         </Boton>
       </div>
       {tramo.etapas.length > 0 && <RecorridoPieEditor tramo={tramo} />}
+      <PerfilesEditor tramo={tramo} />
       <BloqueViaje tramo={tramo} tipo="vuelta" abierta={abierta} onAbrir={setAbierta} />
     </div>
   );

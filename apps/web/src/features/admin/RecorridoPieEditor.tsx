@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { TramoEditor } from '@caminos/shared';
+import { perfilDe, type TramoEditor } from '@caminos/shared';
 import { editar, useCambio } from '../../lib/admin';
 import { numeroKm } from '../../lib/formato';
 import { FUENTE_CNIG, leerGpx, pareceCnig } from '../../lib/gpx';
@@ -60,7 +60,17 @@ export function RecorridoPieEditor({ tramo }: { tramo: TramoEditor }) {
       {
         fuente: fuente.trim() || null,
         etapas: validas.flatMap(({ etapaId, resultado: r }) =>
-          r.ok ? [{ id: etapaId, traza: { type: 'LineString', coordinates: r.coordenadas }, km: Math.round(r.metros / 10) / 100 }] : [],
+          r.ok
+            ? [
+                {
+                  id: etapaId,
+                  traza: { type: 'LineString', coordinates: r.coordenadas },
+                  km: Math.round(r.metros / 10) / 100,
+                  // Con las altitudes del GPX, el perfil sale de todos sus puntos; si no, lo calcula el servidor
+                  perfil: r.conAltitud ? perfilDe(r.conAltitud, 'gpx') : null,
+                },
+              ]
+            : [],
         ),
       },
       { onSuccess: () => setPropuestas(null) },

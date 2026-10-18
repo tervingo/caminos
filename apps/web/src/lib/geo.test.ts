@@ -21,6 +21,7 @@ const etapa = (parcial: Partial<Etapa>): Etapa => ({
   trazaPie: null,
   kmPie: null,
   trazaPieFuente: null,
+  perfil: null,
   sitios: [],
   ...parcial,
 });

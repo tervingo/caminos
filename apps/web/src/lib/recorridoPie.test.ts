@@ -31,6 +31,16 @@ describe('recorrido a pie', () => {
     expect(distancia([43.0, -4], [43.0, -3.99])).toBeLessThan(1000);
   });
 
+  it('conserva las altitudes del GPX en todos los puntos del recorrido, si las trae', () => {
+    const conAltitud = (lon: number, lat0: number, lat1: number) => recta(lon, lat0, lat1).map(([lat, l], i): [number, number, number] => [lat, l, 500 + i]);
+    const r = recortar(construirRed([conAltitud(-4, 43.0, 43.1)]), [43.02, -4], [43.08, -4]);
+    expect(r.ok && r.conAltitud?.length).toBe(61);
+    expect(r.ok && r.conAltitud?.[0]).toEqual([-4, 43.02, 520]);
+    // Sin altitud en el GPX no hay perfil propio (lo pondrá el servidor)
+    const sin = recortar(construirRed([recta(-4, 43.0, 43.1)]), [43.02, -4], [43.08, -4]);
+    expect(sin.ok && sin.conAltitud).toBeNull();
+  });
+
   it('avisa si la etapa no está en los ficheros', () => {
     const red = construirRed([recta(-4, 43.0, 43.1)]);
     expect(recortar(red, [43.05, -4], [43.5, -4])).toMatchObject({ ok: false, motivo: 'lejos' });

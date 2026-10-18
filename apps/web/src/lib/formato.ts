@@ -42,6 +42,11 @@ export function numeroKm(km: number): string {
   return decimal.format(km);
 }
 
+/** 1460 → '1.460 m' */
+export function metros(m: number): string {
+  return `${entero.format(m)} m`;
+}
+
 /** 1700 → '+1.700 m' */
 export function desnivel(metros: number): string {
   return `+${entero.format(metros)} m`;

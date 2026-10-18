@@ -5,8 +5,12 @@ import { HttpError } from './errores.js';
 
 type Coord = [number, number]; // [lon, lat]
 
+type Coord3 = [number, number, number]; // [lon, lat, altitud]
+
 export interface RutaCalculada {
   coordenadas: Coord[];
+  /** Las mismas coordenadas con su altitud, para el perfil */
+  conAltitud: Coord3[];
   metros: number;
   /** Desnivel acumulado, si el servicio lo devuelve */
   subida: number | null;
@@ -21,7 +25,12 @@ export interface Buscador {
 
 export interface Ors extends Buscador {
   ruta(puntos: Coord[], perfil: PerfilRuta): Promise<RutaCalculada>;
+  /** Altitud de cada punto de una línea (modelo del terreno) */
+  altitudes(coords: Coord[]): Promise<Coord3[]>;
 }
+
+/** Puntos por petición que admite el servicio de altitudes */
+const ALTITUDES_MAX = 2000;
 
 const BASE = 'https://api.openrouteservice.org';
 // Los Caminos de la península y su arranque en Francia
@@ -53,7 +62,8 @@ export function createOrs(apiKey: string | undefined, fetchFn: typeof fetch = fe
           'Accept-Language': 'es',
           ...init.headers,
         },
-        signal: AbortSignal.timeout(15_000),
+        // Por debajo de los 26 s a los que corta el proxy de Netlify; ORS a veces tarda bastante
+        signal: AbortSignal.timeout(25_000),
       });
     } catch {
       throw new HttpError(502, 'servicio-rutas', 'OpenRouteService no responde');
@@ -92,10 +102,28 @@ export function createOrs(apiKey: string | undefined, fetchFn: typeof fetch = fe
       if (!ruta) throw new HttpError(422, 'ruta-imposible', 'No hay una ruta por carretera entre esos puntos');
       return {
         coordenadas: ruta.geometry.coordinates.map(([lon, lat]) => [lon, lat]),
+        conAltitud: ruta.geometry.coordinates.map(([lon, lat, alt]) => [lon, lat, alt ?? 0]),
         metros: ruta.properties.summary?.distance ?? 0,
         subida: ruta.properties.ascent ?? null,
         bajada: ruta.properties.descent ?? null,
       };
+    },
+
+    async altitudes(coords) {
+      const resultado: Coord3[] = [];
+      for (let i = 0; i < coords.length; i += ALTITUDES_MAX) {
+        const datos = await pedir<{ geometry: { coordinates: Coord3[] } }>('/elevation/line', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            format_in: 'geojson',
+            format_out: 'geojson',
+            geometry: { type: 'LineString', coordinates: coords.slice(i, i + ALTITUDES_MAX) },
+          }),
+        });
+        resultado.push(...datos.geometry.coordinates);
+      }
+      return resultado;
     },
 
     async buscar(texto) {

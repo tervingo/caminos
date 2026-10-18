@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import { EtapaPage } from './routes/EtapaPage';
 import { FotosPage } from './routes/FotosPage';
 import { Home } from './routes/Home';
 import { Layout } from './routes/Layout';
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'tramos/:slug', element: <TripPage /> },
       { path: 'tramos/:slug/fotos', element: <FotosPage /> },
+      { path: 'tramos/:slug/etapas/:numero', element: <EtapaPage /> },
       { path: 'admin/login', lazy: async () => ({ Component: (await import('./routes/admin/Login')).AdminLogin }) },
       {
         path: 'admin',

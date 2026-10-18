@@ -94,6 +94,25 @@ export const tramoResumenSchema = z.object({
 });
 export type TramoResumen = z.infer<typeof tramoResumenSchema>;
 
+/**
+ * Perfil de altitud de la línea principal de una etapa (el recorrido a pie o, si no, la ruta).
+ * Cada punto: [km desde el inicio, altitud en m, lat, lon]; como mucho unos cientos de puntos.
+ */
+export const origenPerfilSchema = z.enum(['gpx', 'terreno']);
+/** gpx: altitudes medidas del propio GPX; terreno: modelo del terreno de OpenRouteService */
+export type OrigenPerfil = z.infer<typeof origenPerfilSchema>;
+
+export const perfilSchema = z.object({
+  /** Los perfiles guardados antes de existir este campo son del terreno */
+  origen: origenPerfilSchema.default('terreno'),
+  puntos: z.array(z.tuple([z.number(), z.number(), z.number(), z.number()])),
+  subida: z.number().int(),
+  bajada: z.number().int(),
+  minima: z.number(),
+  maxima: z.number(),
+});
+export type Perfil = z.infer<typeof perfilSchema>;
+
 /** Sitio de interés de una etapa: se marca en el mapa con una estrella, aunque quede fuera de la ruta */
 export const sitioSchema = z.object({
   nombre: z.string(),
@@ -128,6 +147,7 @@ export const etapaSchema = z.object({
   kmPie: z.number().nullable(),
   /** Atribución del trazado a pie, p. ej. «© FEAACS / CNIG (CC BY 4.0)» */
   trazaPieFuente: z.string().nullable(),
+  perfil: perfilSchema.nullable(),
   sitios: z.array(sitioSchema),
 });
 export type Etapa = z.infer<typeof etapaSchema>;
@@ -279,6 +299,8 @@ export const recorridoPieSchema = z.object({
         id: z.string().uuid(),
         traza: lineStringSchema.refine((l) => l.coordinates.length >= 2 && l.coordinates.length <= 20000).nullable(),
         km: z.number().min(0).max(9999).nullable(),
+        /** Perfil calculado en el navegador con las altitudes del GPX, si las trae */
+        perfil: perfilSchema.nullable().optional(),
       }),
     )
     .min(1),
@@ -385,3 +407,5 @@ export const tramoEditorSchema = tramoDetalleSchema.extend({
   fotos: z.array(fotoEditorSchema),
 });
 export type TramoEditor = z.infer<typeof tramoEditorSchema>;
+
+export { desniveles, perfilDe } from './perfil.js';

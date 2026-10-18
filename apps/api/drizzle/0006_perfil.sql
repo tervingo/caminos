@@ -1,0 +1,1 @@
+ALTER TABLE "etapas" ADD COLUMN "perfil" jsonb;

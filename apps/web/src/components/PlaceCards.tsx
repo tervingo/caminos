@@ -12,9 +12,11 @@ interface Props {
   etapas: Etapa[];
   fotos: Foto[];
   onVerEnMapa: (id: string) => void;
+  /** En la ficha de una etapa no hace falta decir de qué etapa es cada sitio */
+  conEtapa?: boolean;
 }
 
-export function PlaceCards({ lugares, etapas, fotos, onVerEnMapa }: Props) {
+export function PlaceCards({ lugares, etapas, fotos, onVerEnMapa, conEtapa = true }: Props) {
   const fotoDe = (l: Lugar) => (l.fotoId ? fotos.find((f) => f.id === l.fotoId) : undefined);
   // Cada sitio indica su etapa y se listan en el orden del camino
   const posicion = new Map(etapas.map((e, i) => [e.id, i]));
@@ -39,7 +41,7 @@ export function PlaceCards({ lugares, etapas, fotos, onVerEnMapa }: Props) {
             {deTipo.map((l) => (
               <div key={l.id} className="flex gap-3 border-t border-linea-suave py-3">
                 <div className="min-w-0 flex-1">
-                  {posicion.has(l.etapaId) && (
+                  {conEtapa && posicion.has(l.etapaId) && (
                     <div className="text-xs font-semibold text-bosque">
                       Etapa {posicion.get(l.etapaId)! + 1} · {etapas[posicion.get(l.etapaId)!].titulo}
                     </div>

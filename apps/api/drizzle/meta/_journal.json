@@ -43,6 +43,13 @@
       "when": 1792171490744,
       "tag": "0005_recorrido-a-pie",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792337349838,
+      "tag": "0006_perfil",
+      "breakpoints": true
     }
   ]
 }
