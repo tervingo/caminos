@@ -63,7 +63,7 @@ Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resu
 
 Si el servicio de Render no se llama `caminos-api`, cambia la URL del proxy en `netlify.toml`.
 
-**Worker de fotos (Cloudflare)**: `apps/fotos` sirve el bucket R2 `caminos-fotos` en https://caminos-fotos.j4alonso.workers.dev (solo `GET`/`HEAD` de `fotos/`). No se despliega solo:
+**Worker de fotos (Cloudflare)**: `apps/fotos` sirve el bucket R2 `caminos-fotos` en https://caminos-fotos.j4alonso.workers.dev (solo `GET`/`HEAD` de `fotos/`). La web no lo enlaza directamente: Netlify reenvía `/fotos/*` al Worker (ver `netlify.toml`) y en Render `PUBLIC_ASSETS_URL=https://encaminos.netlify.app`. Así las fotos se ven aunque un operador bloquee las direcciones de Cloudflare (como en España durante los partidos de LaLiga); la subida, que va directa a R2, sí falla mientras dure el bloqueo. No se despliega solo:
 
 ```powershell
 npx -w @caminos/fotos wrangler login   # una vez

@@ -14,6 +14,15 @@
   status = 200
   force = true
 
+# Fotos: se piden a este mismo dominio y Netlify las trae del Worker de Cloudflare (y las guarda en
+# su caché). Así se ven aunque un operador bloquee las direcciones de Cloudflare (p. ej. los bloqueos
+# de LaLiga en España durante los partidos). En Render, PUBLIC_ASSETS_URL = https://encaminos.netlify.app
+[[redirects]]
+  from = "/fotos/*"
+  to = "https://caminos-fotos.j4alonso.workers.dev/fotos/:splat"
+  status = 200
+  force = true
+
 # Los archivos de /assets/ cambian de nombre en cada despliegue: si uno ya no existe, 404
 # (y no index.html, que el navegador rechaza como script y rompe la página)
 [[redirects]]

@@ -16,7 +16,8 @@ const envSchema = z
     ALLOWED_ORIGIN: conDefecto('http://localhost:5173,https://encaminos.netlify.app'),
     DATABASE_URL: opcional,
     JWT_SECRET: opcional,
-    PUBLIC_ASSETS_URL: conDefecto('https://caminos-fotos.j4alonso.workers.dev', z.string().url()),
+    /** Dónde se sirven las fotos: la web de Netlify, que las trae del Worker de Cloudflare (ver netlify.toml) */
+    PUBLIC_ASSETS_URL: conDefecto('https://encaminos.netlify.app', z.string().url()),
     R2_ACCOUNT_ID: opcional,
     R2_ACCESS_KEY_ID: opcional,
     R2_SECRET_ACCESS_KEY: opcional,

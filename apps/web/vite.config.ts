@@ -19,6 +19,8 @@ export default defineConfig({
     proxy: {
       // Sin reutilizar conexiones: evita los ECONNRESET del proxy que dejaban peticiones colgadas
       '/api': { target: 'http://localhost:3000', agent: new Agent({ keepAlive: false }) },
+      // Igual que en Netlify: con PUBLIC_ASSETS_URL=http://localhost:5173, las fotos llegan del Worker por aquí
+      '/fotos': { target: 'https://caminos-fotos.j4alonso.workers.dev', changeOrigin: true },
     },
   },
 });
