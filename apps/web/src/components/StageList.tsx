@@ -41,7 +41,8 @@ export function StageList({ etapas, slug, conteoFotos, ida, vuelta, elegida = nu
                 <span className="min-w-0 flex-1">
                   <span className="block text-[17px] font-semibold">{e.titulo}</span>
                   {datos.length > 0 && <span className="block text-[13px] font-semibold text-bosque">{datos.join(' · ')}</span>}
-                  {e.notas && <span className="mt-1.5 line-clamp-2 block text-sm text-musgo">{e.notas}</span>}
+                  {/* Solo el comienzo: la nota entera está en la ficha de la etapa. Sin «block», que anularía el recorte */}
+                  {e.notas && <span className="mt-1.5 line-clamp-2 text-sm text-musgo">{e.notas}</span>}
                   {resumen.length > 0 && <span className="mt-1.5 block text-[13px] text-gris">{resumen.join(' · ')}</span>}
                 </span>
                 <span aria-hidden="true" className="self-center text-xl text-bosque">
