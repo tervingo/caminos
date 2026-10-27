@@ -8,7 +8,7 @@ import { COOKIE_SESION, comprobarOrigen } from './auth.js';
 import type { Config } from './config.js';
 import { type Conexion, comprobarDb } from './db/index.js';
 import { HttpError } from './errores.js';
-import { conRespaldo, createNominatim } from './buscador.js';
+import { combinar, createNominatim } from './buscador.js';
 import { type Buscador, createOrs, type Ors } from './ors.js';
 import { createR2, type R2 } from './r2.js';
 import { adminRoutes } from './routes/admin/index.js';
@@ -21,7 +21,7 @@ const error = (code: string, message: string, details?: unknown): ApiError => ({
 export interface Servicios {
   r2?: R2;
   ors?: Ors;
-  /** Buscador de localidades; por defecto, OpenRouteService con Nominatim de respaldo */
+  /** Buscador de localidades; por defecto, OpenRouteService y Nominatim juntos */
   buscador?: Buscador;
 }
 
@@ -30,7 +30,7 @@ export function buildApp(
   conexion?: Conexion,
   servicios: Servicios = { r2: createR2(config), ors: createOrs(config.ORS_API_KEY) },
 ) {
-  const buscador = servicios.buscador ?? conRespaldo(servicios.ors, createNominatim());
+  const buscador = servicios.buscador ?? combinar(servicios.ors, createNominatim());
   const app = Fastify({
     logger: config.NODE_ENV === 'test' ? false : { level: 'info' },
     // Render y el proxy de Netlify van delante: confiar en X-Forwarded-*

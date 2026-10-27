@@ -150,6 +150,8 @@ function LugarForm({ tramo, etapa, lugar, onCerrar }: PropsForm) {
                 etiqueta="Posición del lugar"
                 value={field.value}
                 zona={zona}
+                // Dormir y comer suelen estar al final de la etapa
+                cerca={etapa.destino ?? etapa.origen}
                 onChange={(punto) => {
                   field.onChange(punto);
                   if (punto?.nombre && !getValues('localidad')) setValue('localidad', punto.nombre);

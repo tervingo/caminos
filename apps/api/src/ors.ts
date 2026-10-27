@@ -17,9 +17,15 @@ export interface RutaCalculada {
   bajada: number | null;
 }
 
+/** Punto de referencia para que salgan antes las localidades cercanas */
+export interface Cerca {
+  lat: number;
+  lon: number;
+}
+
 /** Buscador de localidades por nombre y por punto */
 export interface Buscador {
-  buscar(texto: string): Promise<LugarGeo[]>;
+  buscar(texto: string, cerca?: Cerca): Promise<LugarGeo[]>;
   inverso(lat: number, lon: number): Promise<LugarGeo | null>;
 }
 
@@ -126,8 +132,12 @@ export function createOrs(apiKey: string | undefined, fetchFn: typeof fetch = fe
       return resultado;
     },
 
-    async buscar(texto) {
+    async buscar(texto, cerca) {
       const q = new URLSearchParams({ text: texto, size: '6', 'boundary.country': PAISES });
+      if (cerca) {
+        q.set('focus.point.lat', String(cerca.lat));
+        q.set('focus.point.lon', String(cerca.lon));
+      }
       const datos = await pedir<{ features: FeatureGeo[] }>(`/geocode/search?${q}`);
       return datos.features.map(aLugar);
     },

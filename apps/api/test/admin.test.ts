@@ -412,6 +412,9 @@ describe.skipIf(!url)('editor (API de autor)', () => {
     const res = await pedir('GET', '/api/admin/geo/buscar?q=Potes');
     expect(res.json()[0]).toMatchObject({ nombre: 'Potes', etiqueta: 'Potes, Cantabria, España' });
     expect((await pedir('GET', '/api/admin/geo/buscar?q=P')).statusCode).toBe(400);
+    // Con un punto de referencia, para que salgan antes los pueblos cercanos
+    expect((await pedir('GET', '/api/admin/geo/buscar?q=Potes&lat=43.1&lon=-4.6')).statusCode).toBe(200);
+    expect((await pedir('GET', '/api/admin/geo/buscar?q=Potes&lat=99&lon=-4.6')).statusCode).toBe(400);
     expect((await pedir('GET', '/api/admin/geo/inverso?lat=43.15&lon=-4.62')).json().nombre).toBe('Potes');
   });
 });

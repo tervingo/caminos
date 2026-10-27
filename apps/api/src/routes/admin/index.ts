@@ -9,7 +9,12 @@ import { etapasAdmin } from './etapas.js';
 import { fotosAdmin } from './fotos.js';
 import { tramosAdmin } from './tramos.js';
 
-const busquedaSchema = z.object({ q: z.string().trim().min(2).max(120) });
+// lat y lon (opcionales): un punto de referencia para que salgan antes las localidades cercanas
+const busquedaSchema = z.object({
+  q: z.string().trim().min(2).max(120),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lon: z.coerce.number().min(-180).max(180).optional(),
+});
 const puntoSchema = z.object({ lat: z.coerce.number().min(-90).max(90), lon: z.coerce.number().min(-180).max(180) });
 
 /** Todo lo que cuelga de /api/admin exige sesión del autor */
@@ -25,8 +30,8 @@ export const adminRoutes: FastifyPluginAsync<OpcionesAdmin> = async (app, opcion
   const { buscador } = opciones;
 
   app.get('/api/admin/geo/buscar', async (req): Promise<LugarGeo[]> => {
-    const { q } = validar(busquedaSchema, req.query);
-    return buscador.buscar(q);
+    const { q, lat, lon } = validar(busquedaSchema, req.query);
+    return buscador.buscar(q, lat !== undefined && lon !== undefined ? { lat, lon } : undefined);
   });
 
   app.get('/api/admin/geo/inverso', async (req): Promise<LugarGeo | null> => {

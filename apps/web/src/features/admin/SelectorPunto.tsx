@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { lazy, Suspense, useState } from 'react';
 import type { Punto } from '@caminos/shared';
 import { buscarLocalidad, nombrarPunto } from '../../lib/admin';
+import { numeroKm } from '../../lib/formato';
 import type { Limites } from '../../lib/geo';
+import { distancia } from '../../lib/recorridoPie';
 import { Boton, INPUT, MensajeError } from './ui';
 
 const MapaSelector = lazy(() => import('./MapaSelector'));
@@ -15,21 +17,23 @@ interface Props {
   onChange: (punto: Punto | null) => void;
   /** Zona en la que abrir el mapa */
   zona?: Limites | null;
+  /** Punto de referencia (p. ej. el origen de la etapa): los resultados cercanos salen primero y con su distancia */
+  cerca?: Punto | null;
 }
 
 /**
  * Elige un punto buscando la localidad por nombre o pulsando en el mapa. Solo busca al pulsar
  * «Buscar» o Intro: los buscadores gratuitos tienen cupo y Nominatim no permite autocompletar.
  */
-export function SelectorPunto({ etiqueta, id, value, onChange, zona }: Props) {
+export function SelectorPunto({ etiqueta, id, value, onChange, zona, cerca = null }: Props) {
   const [texto, setTexto] = useState('');
   const [mapa, setMapa] = useState(false);
   const [nombrando, setNombrando] = useState(false);
   const [q, setQ] = useState('');
   const buscar = () => setQ(texto.trim());
   const resultados = useQuery({
-    queryKey: ['geo', q],
-    queryFn: () => buscarLocalidad(q),
+    queryKey: ['geo', q, cerca?.lat, cerca?.lon],
+    queryFn: () => buscarLocalidad(q, cerca),
     enabled: q.length >= 2 && !value,
     staleTime: Infinity,
   });
@@ -93,7 +97,11 @@ export function SelectorPunto({ etiqueta, id, value, onChange, zona }: Props) {
       {resultados.isFetching && <span className="text-[13px] text-gris">Buscando…</span>}
       <MensajeError error={resultados.error} />
       {resultados.data && q.length >= 2 && (
-        <ul role="listbox" aria-label={`Resultados para ${etiqueta.toLowerCase()}`} className="m-0 list-none rounded-[10px] border border-linea bg-white p-1">
+        <ul
+          role="listbox"
+          aria-label={`Resultados para ${etiqueta.toLowerCase()}`}
+          className="m-0 list-none rounded-[10px] border border-linea bg-white p-1"
+        >
           {resultados.data.length === 0 && <li className="px-3 py-2 text-sm text-gris">Sin resultados</li>}
           {resultados.data.map((r) => (
             <li key={`${r.lat},${r.lon}`} role="option" aria-selected={false}>
@@ -107,6 +115,11 @@ export function SelectorPunto({ etiqueta, id, value, onChange, zona }: Props) {
                 className="w-full cursor-pointer rounded-lg border-0 bg-transparent px-3 py-2 text-left text-sm hover:bg-papel"
               >
                 <span className="font-semibold">{r.nombre}</span>
+                {cerca && (
+                  <span className="text-gris">
+                    {' · '}a {numeroKm(distancia([cerca.lat, cerca.lon], [r.lat, r.lon]) / 1000)} km{cerca.nombre && ` de ${cerca.nombre}`}
+                  </span>
+                )}
                 <span className="block text-xs text-gris">{r.etiqueta}</span>
               </button>
             </li>

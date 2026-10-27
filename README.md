@@ -40,7 +40,7 @@ npm run dev              # web en http://localhost:5173, API en http://localhost
 | `POST /api/admin/tramos/:id/etapas`, `PUT …/etapas/orden`, `PATCH/DELETE /api/admin/etapas/:id`, `POST …/:id/calcular-ruta` | Autor |
 | `POST /api/admin/tramos/:id/lugares` y `/notas`, `PATCH/DELETE /api/admin/lugares/:id` y `/notas/:id` | Autor |
 | `POST /api/admin/tramos/:id/fotos/firmar`, `POST …/:id/fotos`, `PATCH/DELETE /api/admin/fotos/:id` | Autor |
-| `GET /api/admin/geo/buscar?q=`, `GET /api/admin/geo/inverso?lat=&lon=` | Autor (buscador de OpenRouteService) |
+| `GET /api/admin/geo/buscar?q=[&lat=&lon=]`, `GET /api/admin/geo/inverso?lat=&lon=` | Autor (OpenRouteService y Nominatim juntos; con `lat`/`lon`, primero lo cercano) |
 
 Las escrituras del editor devuelven el tramo completo (`TramoEditor`). Los totales del tramo (km, desnivel y recuadro) se recalculan solos. `calcular-ruta` usa OpenRouteService (`ORS_API_KEY`) y guarda la traza simplificada, los km y el desnivel. Un borrador se puede previsualizar en `/tramos/:slug` con la sesión del autor.
 

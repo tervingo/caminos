@@ -85,7 +85,12 @@ export const useTramoEditor = (id: string) =>
 
 export const useCaminos = () => useQuery({ queryKey: ['caminos'], queryFn: () => getJson('/api/caminos', caminoSchema.array()) });
 
-export const buscarLocalidad = (q: string) => getJson(`/api/admin/geo/buscar?${new URLSearchParams({ q })}`, lugarGeoSchema.array());
+/** Con `cerca`, el servidor pone primero las localidades próximas a ese punto */
+export const buscarLocalidad = (q: string, cerca?: { lat: number; lon: number } | null) =>
+  getJson(
+    `/api/admin/geo/buscar?${new URLSearchParams({ q, ...(cerca && { lat: cerca.lat.toFixed(5), lon: cerca.lon.toFixed(5) }) })}`,
+    lugarGeoSchema.array(),
+  );
 
 export const nombrarPunto = (lat: number, lon: number) =>
   getJson(`/api/admin/geo/inverso?${new URLSearchParams({ lat: String(lat), lon: String(lon) })}`, lugarGeoSchema.nullable());

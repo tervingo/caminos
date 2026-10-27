@@ -225,6 +225,14 @@ const valoresDe = (etapa: Etapa): ValoresEtapa => ({
   })),
 });
 
+/** Dónde acaba lo anterior a una etapa (la etapa previa o la ida), para buscar su origen por allí */
+function finAnterior(tramo: TramoEditor, etapa: Etapa): Punto | null {
+  if (etapa.tipo === 'ida') return null;
+  const camino = tramo.etapas;
+  const i = etapa.tipo === 'vuelta' ? camino.length : camino.findIndex((e) => e.id === etapa.id);
+  return (i > 0 ? camino[i - 1]?.destino : tramo.ida?.destino) ?? null;
+}
+
 function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa: Etapa; zona: Limites | null; onCerrar: () => void }) {
   const [perfil, setPerfil] = useState<PerfilRuta>('driving-car');
   // La ida y la vuelta van siempre en coche y no tienen sitios de interés
@@ -299,6 +307,10 @@ function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa
   // Se puede calcular en cuanto el formulario tiene origen y destino, guardados o no
   const [origen, destino] = useWatch({ control, name: ['origen', 'destino'] });
   const puedeCalcular = !!origen && !!destino;
+  // Para que la búsqueda prefiera los pueblos de la zona y no sus homónimos lejanos
+  const anterior = finAnterior(tramo, etapa);
+  const cercaOrigen = destino ?? anterior;
+  const cercaDestino = origen ?? anterior;
   const calculando = calcular.isPending || (guardar.isPending && puedeCalcular);
 
   return (
@@ -314,7 +326,9 @@ function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa
           <Controller
             control={control}
             name="origen"
-            render={({ field }) => <SelectorPunto id={p.id} etiqueta="Origen" value={field.value} onChange={field.onChange} zona={zona} />}
+            render={({ field }) => (
+              <SelectorPunto id={p.id} etiqueta="Origen" value={field.value} onChange={field.onChange} zona={zona} cerca={cercaOrigen} />
+            )}
           />
         )}
       </Campo>
@@ -323,7 +337,9 @@ function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa
           <Controller
             control={control}
             name="destino"
-            render={({ field }) => <SelectorPunto id={p.id} etiqueta="Destino" value={field.value} onChange={field.onChange} zona={zona} />}
+            render={({ field }) => (
+              <SelectorPunto id={p.id} etiqueta="Destino" value={field.value} onChange={field.onChange} zona={zona} cerca={cercaDestino} />
+            )}
           />
         )}
       </Campo>
@@ -341,7 +357,13 @@ function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa
                 control={control}
                 name={`via.${i}.punto`}
                 render={({ field }) => (
-                  <SelectorPunto etiqueta={`Parada ${i + 1}`} value={field.value} onChange={field.onChange} zona={zona} />
+                  <SelectorPunto
+                    etiqueta={`Parada ${i + 1}`}
+                    value={field.value}
+                    onChange={field.onChange}
+                    zona={zona}
+                    cerca={cercaDestino}
+                  />
                 )}
               />
             </div>
@@ -379,6 +401,7 @@ function EtapaForm({ tramo, etapa, zona, onCerrar }: { tramo: TramoEditor; etapa
                         etiqueta={`Localidad del sitio ${i + 1}`}
                         value={field.value}
                         zona={zona}
+                        cerca={cercaDestino}
                         onChange={(punto) => {
                           field.onChange(punto);
                           if (punto?.nombre && !getValues(`sitios.${i}.nombre`))
