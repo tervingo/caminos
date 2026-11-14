@@ -4,7 +4,7 @@ import { CONTENEDOR } from '../components/ui';
 export function NotFound({ mensaje = 'No encontramos esa página.' }: { mensaje?: string }) {
   return (
     <section className={`${CONTENEDOR} py-24`}>
-      <title>Página no encontrada · En Caminos</title>
+      <title>Página no encontrada · Caminando</title>
       <p className="text-[13px] font-semibold uppercase tracking-[.12em] text-bosque">Fuera del camino</p>
       <h1 className="mt-4 mb-6 font-serif text-5xl font-medium">{mensaje}</h1>
       <Link to="/" className="font-semibold text-bosque">
@@ -22,7 +22,7 @@ export function RouteError() {
   if (error instanceof Error && /dynamically imported module|Importing a module script failed/i.test(error.message)) {
     return (
       <section className={`${CONTENEDOR} py-24`}>
-        <title>Versión nueva · En Caminos</title>
+        <title>Versión nueva · Caminando</title>
         <p className="text-[13px] font-semibold uppercase tracking-[.12em] text-bosque">Versión nueva</p>
         <h1 className="mt-4 mb-6 font-serif text-5xl font-medium">Hay una versión nueva de la web.</h1>
         <button

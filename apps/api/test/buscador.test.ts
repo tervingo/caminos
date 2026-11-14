@@ -24,7 +24,7 @@ describe('buscador de localidades', () => {
     ]);
     const [url, init] = fetchNominatim.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain('countrycodes=es%2Cpt%2Cfr%2Cad');
-    expect((init.headers as Record<string, string>)['User-Agent']).toMatch(/^NuestroCamino/);
+    expect((init.headers as Record<string, string>)['User-Agent']).toMatch(/^Caminando/);
   });
 
   it('solo falla si fallan los dos', async () => {

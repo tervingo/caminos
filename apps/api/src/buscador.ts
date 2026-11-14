@@ -6,7 +6,7 @@ import { HttpError } from './errores.js';
 import type { Buscador, Cerca } from './ors.js';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
-const AGENTE = 'NuestroCamino/1.0 (+https://encaminos.netlify.app)';
+const AGENTE = 'Caminando/1.0 (+https://caminando.netlify.app)';
 const PAISES = 'es,pt,fr,ad';
 
 interface ResultadoNominatim {

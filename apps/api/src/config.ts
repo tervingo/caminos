@@ -13,11 +13,11 @@ const envSchema = z
     PORT: z.preprocess(vacioComoAusente, z.coerce.number().int().positive().default(3000)),
     HOST: conDefecto('0.0.0.0'),
     /** Orígenes desde los que se aceptan escrituras (separados por comas) */
-    ALLOWED_ORIGIN: conDefecto('http://localhost:5173,https://encaminos.netlify.app'),
+    ALLOWED_ORIGIN: conDefecto('http://localhost:5173,https://caminando.netlify.app'),
     DATABASE_URL: opcional,
     JWT_SECRET: opcional,
     /** Dónde se sirven las fotos: la web de Netlify, que las trae del Worker de Cloudflare (ver netlify.toml) */
-    PUBLIC_ASSETS_URL: conDefecto('https://encaminos.netlify.app', z.string().url()),
+    PUBLIC_ASSETS_URL: conDefecto('https://caminando.netlify.app', z.string().url()),
     R2_ACCOUNT_ID: opcional,
     R2_ACCESS_KEY_ID: opcional,
     R2_SECRET_ACCESS_KEY: opcional,

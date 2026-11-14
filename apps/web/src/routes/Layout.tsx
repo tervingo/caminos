@@ -20,7 +20,7 @@ export function Layout() {
         <div className={`${CONTENEDOR} flex flex-wrap items-center justify-between gap-4 py-[18px]`}>
           <Link to="/" className="flex items-center gap-3 hover:no-underline">
             <img src="/img/logo.png" alt="" width={80} height={52} className="h-[52px] w-auto" />
-            <span className="font-serif text-2xl font-semibold">En Caminos</span>
+            <span className="font-serif text-2xl font-semibold">Caminando</span>
             <img
               src="/img/en-santiago.webp"
               alt="El grupo ante la catedral de Santiago"
@@ -56,7 +56,7 @@ export function Layout() {
 
       <footer className="mt-20 border-t border-linea">
         <div className={`${CONTENEDOR} py-6 text-[13px] text-gris`}>
-          En Caminos · un tramo del Camino de Santiago cada año, contado por el grupo.{' '}
+          Caminando · un tramo del Camino de Santiago cada año, contado por el grupo.{' '}
           <Link to="/admin" className="text-gris underline-offset-2">
             Acceso del autor
           </Link>

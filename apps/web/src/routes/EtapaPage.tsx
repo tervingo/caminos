@@ -54,7 +54,7 @@ function Ficha({ tramo, indice }: { tramo: TramoDetalle; indice: number }) {
 
   return (
     <>
-      <title>{`Etapa ${numero} · ${etapa.titulo} · ${tramo.anio} · En Caminos`}</title>
+      <title>{`Etapa ${numero} · ${etapa.titulo} · ${tramo.anio} · Caminando`}</title>
       <section className={`${CONTENEDOR} pt-8`}>
         <Link to={`/tramos/${tramo.slug}`} className="text-sm font-semibold text-bosque">
           ← {tramo.anio} · {tramo.titulo}

@@ -59,7 +59,7 @@ function Fotos({ tramo }: { tramo: TramoDetalle }) {
 
   return (
     <div className={`${CONTENEDOR} pt-8`}>
-      <title>{`Fotos de ${tramo.anio} · ${tramo.titulo} · En Caminos`}</title>
+      <title>{`Fotos de ${tramo.anio} · ${tramo.titulo} · Caminando`}</title>
       <Link to={`/tramos/${tramo.slug}`} className="text-sm font-semibold text-bosque">
         ← {tramo.anio} · {tramo.titulo}
       </Link>

@@ -79,7 +79,7 @@ function Tramo({ tramo }: { tramo: TramoDetalle }) {
 
   return (
     <>
-      <title>{`${tramo.anio} · ${tramo.titulo} · En Caminos`}</title>
+      <title>{`${tramo.anio} · ${tramo.titulo} · Caminando`}</title>
       <section className={`${CONTENEDOR} pt-10`}>
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="min-w-0 flex-[1_1_480px]">
