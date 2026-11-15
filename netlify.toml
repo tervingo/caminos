@@ -30,10 +30,42 @@
   to = "/404.html"
   status = 404
 
+# iOS, si no usa el <link rel="apple-touch-icon">, prueba estos nombres en la raíz: que reciban el
+# icono y no index.html (con la página en lugar de una imagen, el iPhone pone una letra como icono)
+[[redirects]]
+  from = "/apple-touch-icon-120x120.png"
+  to = "/apple-touch-icon.png"
+  status = 200
+[[redirects]]
+  from = "/apple-touch-icon-120x120-precomposed.png"
+  to = "/apple-touch-icon.png"
+  status = 200
+[[redirects]]
+  from = "/apple-touch-icon-152x152.png"
+  to = "/apple-touch-icon.png"
+  status = 200
+[[redirects]]
+  from = "/apple-touch-icon-167x167.png"
+  to = "/apple-touch-icon.png"
+  status = 200
+[[redirects]]
+  from = "/apple-touch-icon-180x180.png"
+  to = "/apple-touch-icon.png"
+  status = 200
+[[redirects]]
+  from = "/apple-touch-icon-180x180-precomposed.png"
+  to = "/apple-touch-icon.png"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
 
 [[headers]]
   for = "/*"
