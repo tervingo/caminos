@@ -56,12 +56,11 @@ export function buildApp(
   });
   app.setNotFoundHandler((_req, reply) => reply.code(404).send(error('no-encontrado', 'No encontrado')));
 
-  app.get('/api/health', async (): Promise<Health> => ({
-    status: 'ok',
-    service: 'caminos-api',
-    time: new Date().toISOString(),
-    db: await comprobarDb(conexion?.pool),
-  }));
+  // Render llama a /api/health cada pocos segundos: si consultara la base, Neon no la apagaría nunca
+  // (y se pagaría el cálculo de todo el mes). La base se comprueba aparte, a mano, en /api/health/db.
+  const salud = (): Health => ({ status: 'ok', service: 'caminos-api', time: new Date().toISOString() });
+  app.get('/api/health', async (): Promise<Health> => salud());
+  app.get('/api/health/db', async (): Promise<Health> => ({ ...salud(), db: await comprobarDb(conexion?.pool) }));
 
   if (conexion) {
     app.register(publicoRoutes, { db: conexion.db, assetsUrl: config.PUBLIC_ASSETS_URL });

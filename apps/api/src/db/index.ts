@@ -12,7 +12,11 @@ export interface Conexion {
 }
 
 export function conectar(databaseUrl: string): Conexion {
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 5 });
+  // Las conexiones sin uso se cierran a los 10 s, antes de que Neon apague la base (a los 5 min)
+  const pool = new pg.Pool({ connectionString: databaseUrl, max: 5, idleTimeoutMillis: 10_000 });
+  // Si Neon corta una conexión que estaba libre, el pool la descarta y abre otra al necesitarla.
+  // Sin este manejador, el error tumbaría el proceso.
+  pool.on('error', (err) => console.warn(`Conexión con la base perdida (se abrirá otra): ${err.message}`));
   return { db: drizzle(pool, { schema }), pool };
 }
 

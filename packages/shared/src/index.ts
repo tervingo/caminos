@@ -6,7 +6,8 @@ export const healthSchema = z.object({
   status: z.literal('ok'),
   service: z.string(),
   time: z.string(),
-  db: z.enum(['ok', 'error', 'sin-configurar']),
+  /** Solo en /api/health/db: /api/health no toca la base para que Neon pueda apagarla */
+  db: z.enum(['ok', 'error', 'sin-configurar']).optional(),
 });
 export type Health = z.infer<typeof healthSchema>;
 

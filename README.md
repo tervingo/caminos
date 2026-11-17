@@ -32,7 +32,7 @@ npm run dev              # web en http://localhost:5173, API en http://localhost
 
 | Endpoint | Acceso |
 | --- | --- |
-| `GET /api/health` | Público |
+| `GET /api/health` (sin tocar la base), `GET /api/health/db` (comprueba la base) | Público |
 | `GET /api/caminos`, `GET /api/tramos`, `GET /api/tramos/:slug` | Público (solo tramos publicados) |
 | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` | Autor (cookie `sesion`, 7 días) |
 | `GET/POST /api/admin/tramos`, `GET/PATCH/DELETE /api/admin/tramos/:id`, `POST …/:id/publicar` y `…/despublicar` | Autor |
@@ -58,7 +58,7 @@ Ambos servicios se construyen desde la **raíz** del monorepo (para que npm resu
 - Root directory: vacío (raíz del repositorio)
 - Build command: `npm ci --include=dev && npm run build:api` (con `NODE_ENV=production`, npm omitiría TypeScript)
 - Start command: `npm run start:api` (aplica las migraciones y arranca)
-- Health check path: `/api/health`
+- Health check path: `/api/health` (no consulta la base: así Neon la apaga tras 5 min sin uso y no se paga el cálculo de todo el mes)
 - Variables: `NODE_ENV=production`, `DATABASE_URL` (rama main), `JWT_SECRET` (obligatoria), las de R2 y `ORS_API_KEY`
 
 Si el servicio de Render no se llama `caminos-api`, cambia la URL del proxy en `netlify.toml`.

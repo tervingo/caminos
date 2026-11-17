@@ -8,6 +8,13 @@ describe('GET /api/health', () => {
     const app = buildApp(loadConfig({ NODE_ENV: 'test' }));
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
+    expect(healthSchema.parse(res.json())).toEqual({ status: 'ok', service: 'caminos-api', time: expect.any(String) });
+    await app.close();
+  });
+
+  it('comprueba la base solo en /api/health/db, para que Neon pueda apagarla', async () => {
+    const app = buildApp(loadConfig({ NODE_ENV: 'test' }));
+    const res = await app.inject({ method: 'GET', url: '/api/health/db' });
     expect(healthSchema.parse(res.json())).toMatchObject({ status: 'ok', db: 'sin-configurar' });
     await app.close();
   });
